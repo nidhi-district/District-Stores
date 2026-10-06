@@ -1,0 +1,103 @@
+Placeholder photography from Unsplash (https://unsplash.com/license). Replace with licensed brand imagery before release.
+
+look_burgundy_muse	https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03
+look_camel_coat	https://images.unsplash.com/photo-1619086303291-0ef7699e4b31
+look_parisian_edge	https://images.unsplash.com/photo-1525450824786-227cbef70703
+look_quiet_luxury	https://images.unsplash.com/photo-1624206112918-f140f087f9b5
+palette_butter-denim_1	https://images.unsplash.com/photo-1538329972958-465d6d2144ed
+palette_butter-denim_2	https://images.unsplash.com/photo-1558171813-4c088753af8f
+palette_butter-denim_3	https://images.unsplash.com/photo-1588117305388-c2631a279f82
+palette_butter-denim_4	https://images.unsplash.com/photo-1596755094514-f87e34085b2c
+palette_butter-denim_5	https://images.unsplash.com/photo-1539109136881-3be0616acf4b
+palette_butter-denim_6	https://images.unsplash.com/photo-1549298916-b41d501d3772
+palette_midnight-olive_1	https://images.unsplash.com/photo-1534528741775-53994a69daeb
+palette_midnight-olive_2	https://images.unsplash.com/photo-1553062407-98eeb64c6a62
+palette_midnight-olive_3	https://images.unsplash.com/photo-1487222477894-8943e31ef7b2
+palette_midnight-olive_4	https://images.unsplash.com/photo-1520367445093-50dc08a59d9d
+palette_midnight-olive_5	https://images.unsplash.com/photo-1536766820879-059fec98ec0a
+palette_midnight-olive_6	https://images.unsplash.com/photo-1560243563-062bfc001d68
+palette_rose-clay_1	https://images.unsplash.com/photo-1518577915332-c2a19f149a75
+palette_rose-clay_2	https://images.unsplash.com/photo-1591047139829-d91aecb6caea
+palette_rose-clay_3	https://images.unsplash.com/photo-1594633312681-425c7b97ccd1
+palette_rose-clay_4	https://images.unsplash.com/photo-1531746020798-e6953c6e8e04
+palette_rose-clay_5	https://images.unsplash.com/photo-1581044777550-4cfa60707c03
+palette_rose-clay_6	https://images.unsplash.com/photo-1503342217505-b0a15ec3261c
+palette_sage-linen_1	https://images.unsplash.com/photo-1523381210434-271e8be1f52b
+palette_sage-linen_2	https://images.unsplash.com/photo-1574201635302-388dd92a4c3f
+palette_sage-linen_3	https://images.unsplash.com/photo-1434389677669-e08b4cac3105
+palette_sage-linen_4	https://images.unsplash.com/photo-1509319117193-57bab727e09d
+palette_sage-linen_5	https://images.unsplash.com/photo-1496217590455-aa63a8350eea
+palette_sage-linen_6	https://images.unsplash.com/photo-1512436991641-6745cdb1723f
+palette_slate-noir_1	https://images.unsplash.com/photo-1545291730-faff8ca1d4b0
+palette_slate-noir_2	https://images.unsplash.com/photo-1578681994506-b8f463449011
+palette_slate-noir_3	https://images.unsplash.com/photo-1544441893-675973e31985
+palette_slate-noir_4	https://images.unsplash.com/photo-1611312449408-fcece27cdbb7
+palette_slate-noir_5	https://images.unsplash.com/photo-1551028719-00167b16eac5
+palette_slate-noir_6	https://images.unsplash.com/photo-1525171254930-643fc658b64e
+plan_brunch_1	https://images.unsplash.com/photo-1496747611176-843222e1e57c
+plan_brunch_2	https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43
+plan_brunch_3	https://images.unsplash.com/photo-1577900232427-18219b9166a0
+plan_diwali_1	https://images.unsplash.com/photo-1610030469983-98e550d6193c
+plan_diwali_2	https://images.unsplash.com/photo-1617627143750-d86bc21e42bb
+plan_diwali_3	https://images.unsplash.com/photo-1566174053879-31528523f8ae
+plan_first_date_1	https://images.unsplash.com/photo-1638717366457-dbcaf6b1afbc
+plan_first_date_2	https://images.unsplash.com/photo-1583846783214-7229a91b20ed
+plan_first_date_3	https://images.unsplash.com/photo-1551803091-e20673f15770
+plan_office_1	https://images.unsplash.com/photo-1550639525-c97d455acf70
+plan_office_2	https://images.unsplash.com/photo-1581338834647-b0fb40704e21
+plan_office_3	https://images.unsplash.com/photo-1524504388940-b1c1722653e1
+plan_wedding_1	https://images.unsplash.com/photo-1568252542512-9fe8fe9c87bb
+plan_wedding_2	https://images.unsplash.com/photo-1595777457583-95e059d581b8
+plan_wedding_3	https://images.unsplash.com/photo-1609357605129-26f69add5d6e
+rack_adidas_track	https://images.unsplash.com/photo-1515886657613-9f3515b0c78f
+rack_blu_trucker	https://images.unsplash.com/photo-1488426862026-3ee34a7d66df
+rack_bonkers_jeans	https://images.unsplash.com/photo-1541099649105-f69ad21f3246
+rack_hm_overcoat	https://images.unsplash.com/photo-1513094735237-8f2714d57c13
+rack_nicobar_kaftan	https://images.unsplash.com/photo-1605763240000-7e93b172d754
+rack_snitch_biker	https://images.unsplash.com/photo-1520975954732-35dd22299614
+rack_tss_tee	https://images.unsplash.com/photo-1576566588028-4147f3842f27
+rack_zara_blazer	https://images.unsplash.com/photo-1571513722275-4b41940f54b8
+staple_blazer	https://images.unsplash.com/photo-1507679799987-c73779587ccf
+staple_blazer_1	https://images.unsplash.com/photo-1617137968427-85924c800a22
+staple_blazer_2	https://images.unsplash.com/photo-1600091166971-7f9faad6c1e2
+staple_blazer_3	https://images.unsplash.com/photo-1552374196-1ab2a1c593e8
+staple_denim	https://images.unsplash.com/photo-1542272604-787c3835535d
+staple_denim_1	https://images.unsplash.com/photo-1473966968600-fa801b869a1a
+staple_denim_2	https://images.unsplash.com/photo-1621184455862-c163dfb30e0f
+staple_denim_3	https://images.unsplash.com/photo-1517841905240-472988babdf9
+staple_denim_4	https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0
+staple_white_tee	https://images.unsplash.com/photo-1521572163474-6864f9cf17ab
+staple_white_tee_1	https://images.unsplash.com/photo-1554568218-0f1715e72254
+staple_white_tee_2	https://images.unsplash.com/photo-1622445275463-afa2ab738c34
+staple_white_tee_3	https://images.unsplash.com/photo-1627225924765-552d49cf47ad
+staple_white_tee_4	https://images.unsplash.com/photo-1467043237213-65f2da53396f
+staple_white_tee_5	https://images.unsplash.com/photo-1525507119028-ed4c629a60a3
+staple_white_tee_6	https://images.unsplash.com/photo-1598554747436-c9293d6a588f
+story_doodlage	https://images.unsplash.com/photo-1558769132-cb1aea458c5e
+plan_active_1	https://images.unsplash.com/photo-1588117305388-c2631a279f82
+plan_active_2	https://images.unsplash.com/photo-1535295972055-1c762f4483e5
+plan_active_3	https://images.unsplash.com/photo-1542291026-7eec264c27ff
+story_cord	supplied by the product team (2026-10-05)
+story_qaafi	supplied by the product team (2026-10-05)
+story_nappa_dori	supplied by the product team (2026-10-05)
+story_gully_labs	supplied by the product team (2026-10-05)
+article_gully_1	https://images.unsplash.com/photo-1549298916-b41d501d3772
+article_gully_2	https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77
+article_gully_3	https://images.unsplash.com/photo-1542291026-7eec264c27ff
+article_cord_1	https://images.unsplash.com/photo-1485462537746-965f33f7f6a7
+article_cord_2	https://images.unsplash.com/photo-1509319117193-57bab727e09d
+article_qaafi_1	https://images.unsplash.com/photo-1556905055-8f358a7a47b2
+article_nappa_1	https://images.unsplash.com/photo-1622560480605-d83c853bc5c3
+article_nappa_2	https://images.unsplash.com/photo-1614252235316-8c857d38b5f4
+article_doodlage_1	https://images.unsplash.com/photo-1490481651871-ab68de25d43d
+article_doodlage_2	https://images.unsplash.com/photo-1558171813-4c088753af8f
+article_doodlage_3	https://images.unsplash.com/photo-1564257631407-4deb1f99d992
+
+Rack photos supplied by the team (Oct 2026), source and licence to confirm before release:
+  rack_blu_pinafore, rack_zara_dress, rack_adidas_popper, rack_bonkers_patchwork
+
+Brand logos (Assets.xcassets/Logos) — trademarks of their owners, used to identify partner brands in this prototype. Confirm usage with each brand before release:
+  H&M, adidas, Zara: Wikimedia Commons logo files
+  Nicobar, Doodlage, Nappa Dori, Bonkers Corner, Gully Labs, Project Qaafi: the brands' own website logos
+  Snitch, The Souled Store: App Store app icons
+  Cord, Blu: no usable logo found; text mark shown

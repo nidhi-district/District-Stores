@@ -1,0 +1,377 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* MyAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* MyAppApp.swift */; };
+		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
+		A10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Assets.xcassets */; };
+		A10000000000000000000004 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Preview Assets.xcassets */; };
+		A10000000000000000000010 /* BackstageTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* BackstageTokens.swift */; };
+		A10000000000000000000011 /* EditorialData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* EditorialData.swift */; };
+		A10000000000000000000012 /* EditorialComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* EditorialComponents.swift */; };
+		A10000000000000000000013 /* EditorialSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* EditorialSections.swift */; };
+		A10000000000000000000014 /* EditorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* EditorialView.swift */; };
+		A10000000000000000000020 /* BackstageStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* BackstageStyles.swift */; };
+		A10000000000000000000021 /* EditorialMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* EditorialMotion.swift */; };
+		A10000000000000000000022 /* StoryReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* StoryReaderView.swift */; };
+		A10000000000000000000023 /* ProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000023 /* ProductDetailView.swift */; };
+		A10000000000000000000024 /* PlanGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000024 /* PlanGalleryView.swift */; };
+		A10000000000000000000025 /* PaletteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000025 /* PaletteDetailView.swift */; };
+		A10000000000000000000026 /* ShopTheLookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000026 /* ShopTheLookView.swift */; };
+		A10000000000000000000027 /* StapleStudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000027 /* StapleStudioView.swift */; };
+		A10000000000000000000028 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000028 /* SearchView.swift */; };
+		A10000000000000000000029 /* StoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000029 /* StoresView.swift */; };
+		A10000000000000000000030 /* BeVietnamPro-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000030 /* BeVietnamPro-Regular.ttf */; };
+		A10000000000000000000031 /* BeVietnamPro-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000031 /* BeVietnamPro-Medium.ttf */; };
+		A10000000000000000000032 /* BeVietnamPro-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000032 /* BeVietnamPro-SemiBold.ttf */; };
+		A10000000000000000000033 /* BeVietnamPro-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000033 /* BeVietnamPro-Bold.ttf */; };
+		A10000000000000000000034 /* BeVietnamPro-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000034 /* BeVietnamPro-ExtraBold.ttf */; };
+		A10000000000000000000035 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000035 /* Anton-Regular.ttf */; };
+		A10000000000000000000036 /* DMSerifDisplay-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000036 /* DMSerifDisplay-Italic.ttf */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* MyAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAppApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000000000000000000004 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		A20000000000000000000005 /* MyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000010 /* BackstageTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackstageTokens.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* EditorialData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialData.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* EditorialComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialComponents.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* EditorialSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialSections.swift; sourceTree = "<group>"; };
+		A20000000000000000000014 /* EditorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialView.swift; sourceTree = "<group>"; };
+		A20000000000000000000020 /* BackstageStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackstageStyles.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* EditorialMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialMotion.swift; sourceTree = "<group>"; };
+		A20000000000000000000022 /* StoryReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryReaderView.swift; sourceTree = "<group>"; };
+		A20000000000000000000023 /* ProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailView.swift; sourceTree = "<group>"; };
+		A20000000000000000000024 /* PlanGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanGalleryView.swift; sourceTree = "<group>"; };
+		A20000000000000000000025 /* PaletteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaletteDetailView.swift; sourceTree = "<group>"; };
+		A20000000000000000000026 /* ShopTheLookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopTheLookView.swift; sourceTree = "<group>"; };
+		A20000000000000000000027 /* StapleStudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StapleStudioView.swift; sourceTree = "<group>"; };
+		A20000000000000000000028 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		A20000000000000000000029 /* StoresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoresView.swift; sourceTree = "<group>"; };
+		A20000000000000000000030 /* BeVietnamPro-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BeVietnamPro-Regular.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000031 /* BeVietnamPro-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BeVietnamPro-Medium.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000032 /* BeVietnamPro-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BeVietnamPro-SemiBold.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000033 /* BeVietnamPro-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BeVietnamPro-Bold.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000034 /* BeVietnamPro-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BeVietnamPro-ExtraBold.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000035 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000036 /* DMSerifDisplay-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSerifDisplay-Italic.ttf"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000002 /* MyApp */,
+				A40000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000002 /* MyApp */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* MyAppApp.swift */,
+				A20000000000000000000002 /* ContentView.swift */,
+				A20000000000000000000010 /* BackstageTokens.swift */,
+				A20000000000000000000020 /* BackstageStyles.swift */,
+				A20000000000000000000011 /* EditorialData.swift */,
+				A20000000000000000000012 /* EditorialComponents.swift */,
+				A20000000000000000000013 /* EditorialSections.swift */,
+				A20000000000000000000014 /* EditorialView.swift */,
+				A20000000000000000000021 /* EditorialMotion.swift */,
+				A20000000000000000000022 /* StoryReaderView.swift */,
+				A20000000000000000000023 /* ProductDetailView.swift */,
+				A20000000000000000000024 /* PlanGalleryView.swift */,
+				A20000000000000000000025 /* PaletteDetailView.swift */,
+				A20000000000000000000026 /* ShopTheLookView.swift */,
+				A20000000000000000000027 /* StapleStudioView.swift */,
+				A20000000000000000000028 /* SearchView.swift */,
+				A20000000000000000000029 /* StoresView.swift */,
+				A20000000000000000000003 /* Assets.xcassets */,
+				A40000000000000000000005 /* Fonts */,
+				A40000000000000000000004 /* Preview Content */,
+			);
+			path = MyApp;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000005 /* MyApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000004 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000004 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		A40000000000000000000005 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000030 /* BeVietnamPro-Regular.ttf */,
+				A20000000000000000000031 /* BeVietnamPro-Medium.ttf */,
+				A20000000000000000000032 /* BeVietnamPro-SemiBold.ttf */,
+				A20000000000000000000033 /* BeVietnamPro-Bold.ttf */,
+				A20000000000000000000034 /* BeVietnamPro-ExtraBold.ttf */,
+				A20000000000000000000035 /* Anton-Regular.ttf */,
+				A20000000000000000000036 /* DMSerifDisplay-Italic.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* MyApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000000000000000000002 /* Build configuration list for PBXNativeTarget "MyApp" */;
+			buildPhases = (
+				A30000000000000000000002 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A30000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MyApp;
+			productName = MyApp;
+			productReference = A20000000000000000000005 /* MyApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A60000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A50000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXProject "MyApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A40000000000000000000001;
+			productRefGroup = A40000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A50000000000000000000001 /* MyApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A30000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000004 /* Preview Assets.xcassets in Resources */,
+				A10000000000000000000003 /* Assets.xcassets in Resources */,
+				A10000000000000000000030 /* BeVietnamPro-Regular.ttf in Resources */,
+				A10000000000000000000031 /* BeVietnamPro-Medium.ttf in Resources */,
+				A10000000000000000000032 /* BeVietnamPro-SemiBold.ttf in Resources */,
+				A10000000000000000000033 /* BeVietnamPro-Bold.ttf in Resources */,
+				A10000000000000000000034 /* BeVietnamPro-ExtraBold.ttf in Resources */,
+				A10000000000000000000035 /* Anton-Regular.ttf in Resources */,
+				A10000000000000000000036 /* DMSerifDisplay-Italic.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A30000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000002 /* ContentView.swift in Sources */,
+				A10000000000000000000001 /* MyAppApp.swift in Sources */,
+				A10000000000000000000010 /* BackstageTokens.swift in Sources */,
+				A10000000000000000000020 /* BackstageStyles.swift in Sources */,
+				A10000000000000000000011 /* EditorialData.swift in Sources */,
+				A10000000000000000000012 /* EditorialComponents.swift in Sources */,
+				A10000000000000000000013 /* EditorialSections.swift in Sources */,
+				A10000000000000000000014 /* EditorialView.swift in Sources */,
+				A10000000000000000000021 /* EditorialMotion.swift in Sources */,
+				A10000000000000000000022 /* StoryReaderView.swift in Sources */,
+				A10000000000000000000023 /* ProductDetailView.swift in Sources */,
+				A10000000000000000000024 /* PlanGalleryView.swift in Sources */,
+				A10000000000000000000025 /* PaletteDetailView.swift in Sources */,
+				A10000000000000000000026 /* ShopTheLookView.swift in Sources */,
+				A10000000000000000000027 /* StapleStudioView.swift in Sources */,
+				A10000000000000000000028 /* SearchView.swift in Sources */,
+				A10000000000000000000029 /* StoresView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A70000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A70000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A70000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"MyApp/Preview Content\"";
+				DEVELOPMENT_TEAM = VK5TUTFVRS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_FILE = MyApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "District Stores";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nidhi.myapp123;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A70000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"MyApp/Preview Content\"";
+				DEVELOPMENT_TEAM = VK5TUTFVRS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_FILE = MyApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "District Stores";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nidhi.myapp123;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A80000000000000000000001 /* Build configuration list for PBXProject "MyApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000001 /* Debug */,
+				A70000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000000000000000000002 /* Build configuration list for PBXNativeTarget "MyApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A70000000000000000000003 /* Debug */,
+				A70000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A60000000000000000000001 /* Project object */;
+}

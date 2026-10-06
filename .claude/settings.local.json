@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -)",
+      "Bash(plutil -lint MyApp.xcodeproj/project.pbxproj)",
+      "Bash(swiftc -typecheck -target arm64-apple-macos14 MyApp/*.swift)",
+      "Bash(grep -v \"^$\")",
+      "Bash(xcrun --show-sdk-version)",
+      "Bash(xcrun --show-sdk-path)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://unsplash.com/napi/search/photos?query=fashion%20editorial&per_page=5\")",
+      "Bash(curl -sL -A \"Mozilla/5.0\" \"https://unsplash.com/napi/search/photos?query=fashion%20editorial&per_page=5\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://images.pexels.com/\")",
+      "Bash(python3 -c \"import PIL; print\\(PIL.__version__\\)\")",
+      "Bash(python3 -m venv venv)",
+      "Bash(./venv/bin/pip install *)",
+      "Bash(./venv/bin/python -c \"import PIL; print\\('ok', PIL.__version__\\)\")",
+      "Bash(curl -sSL \"https://github.com/google/fonts/raw/main/ofl/abrilfatface/AbrilFatface-Regular.ttf\" -o AbrilFatface-Regular.ttf)",
+      "Bash(curl -sSL \"https://github.com/google/fonts/raw/main/ofl/abrilfatface/OFL.txt\" -o OFL-AbrilFatface.txt)",
+      "Bash(sed -i '' 's/\\\\[\"Anton-Regular.ttf\", \"DMSerifDisplay-Italic.ttf\"\\\\]/[\"AbrilFatface-Regular.ttf\"]/' psname.swift)",
+      "Bash(swift psname.swift)",
+      "Bash(mdfind -name \"Group 2147208915\")",
+      "Read(//Users/nidhisingh@zomato.com/Downloads/**)",
+      "Bash(sips -g pixelWidth -g pixelHeight -g hasAlpha /private/tmp/claude-501/-Users-nidhisingh-zomato-com-Desktop-Test/019823c7-1731-4121-b6b8-2aab9054ab38/images/36.png)",
+      "Bash(plutil -lint MyApp/Info.plist)"
+    ]
+  }
+}
