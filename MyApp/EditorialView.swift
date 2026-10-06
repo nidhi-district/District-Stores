@@ -36,7 +36,7 @@ struct EditorialView: View {
                                 StaplesSection().trackSection(.staples).id(EditorialSection.staples).revealOnScroll()
                                 PullQuote()
                                 LooksSection().trackSection(.looks).id(EditorialSection.looks).revealOnScroll()
-                                GlossaryCard().revealOnScroll()
+                                InOutList().revealOnScroll()
                                 PlansSection().trackSection(.plans).id(EditorialSection.plans).revealOnScroll()
                                 PaletteSection().trackSection(.palette).id(EditorialSection.palette).revealOnScroll()
                             }

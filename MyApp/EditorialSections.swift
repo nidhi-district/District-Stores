@@ -819,43 +819,80 @@ struct LookCard: View {
     }
 }
 
-// MARK: - Word of the week
+// MARK: - The In / Out list
 
-/// Minimal dictionary entry on newsprint: one bold rule, the word, a short definition.
-struct GlossaryCard: View {
-    private let ink = M.textInverse
+/// A fashion-magazine In / Out list set as two drifting strips: what's in glides by in bright display
+/// type, what's out drifts the other way, struck through and muted. Static under Reduce Motion.
+struct InOutList: View {
+    private let ins = ["butter yellow", "barrel-leg denim", "mesh flats", "quiet tailoring", "polka dots", "sheer layers"]
+    private let outs = ["skinny jeans", "logo mania", "chunky dad sneakers", "neon everything", "micro bags", "matchy sets"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace12) {
-            Rectangle().fill(ink).frame(height: 3)
-
-            HStack {
-                Text("Word of the week")
-                Spacer()
-                Text("Noun")
+        VStack(spacing: R.spacingSpace16) {
+            title
+            VStack(spacing: R.spacingSpace12) {
+                row(label: "In", items: ins, isIn: true)
+                Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
+                    .padding(.horizontal, R.spacingSpace16)
+                row(label: "Out", items: outs, isIn: false)
             }
-            .backstageText(.specialTitle)
-
-            VStack(alignment: .leading, spacing: R.spacingSpace4) {
-                Text("quiet luxury")
-                    .backstageText(.label1)
-                Text("/ˈkwaɪ.ət ˈlʌk.ʃər.i/")
-                    .backstageText(.body3)
-            }
-
-            Text("Dressing rich without saying so: great fabric, no logos, a palette that whispers.")
-                .backstageText(.body2)
-
-            Text("Spot it in The Quiet Luxury ↗")
-                .backstageText(.label2)
-                .underline()
-                .padding(.top, R.spacingSpace4)
+            .padding(.vertical, R.spacingSpace16)
+            .overlay(alignment: .top) { Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px) }
+            .overlay(alignment: .bottom) { Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px) }
         }
-        .foregroundStyle(ink)
-        .padding(R.spacingSpace20)
-        .background(M.surfaceInverse, in: EditorialCard.shape)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("The in and out list. In: \(ins.joined(separator: ", ")). Out: \(outs.joined(separator: ", ")).")
+    }
+
+    private var title: some View {
+        HStack(spacing: R.spacingSpace12) {
+            Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
+            Text("THE IN / OUT LIST")
+                .font(.custom("BeVietnamPro-SemiBold", size: 12, relativeTo: .caption))
+                .tracking(2.4)
+                .foregroundStyle(M.textSecondary)
+                .fixedSize()
+            Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
+        }
         .padding(.horizontal, R.spacingSpace16)
-        .accessibilityElement(children: .combine)
+    }
+
+    /// A pinned tag on the left, and the items drifting past behind a soft fade.
+    private func row(label: String, items: [String], isIn: Bool) -> some View {
+        HStack(spacing: R.spacingSpace12) {
+            Text(label.uppercased())
+                .backstageText(.specialTitle)
+                .foregroundStyle(isIn ? M.textInverse : M.textSecondary)
+                .frame(width: 44, height: 24)
+                .background(isIn ? M.surfaceInverse : Color.clear, in: Capsule())
+                .overlay(Capsule().strokeBorder(isIn ? Color.clear : M.borderModerate, lineWidth: R.stroke1Px))
+
+            Color.clear
+                .frame(height: 32)
+                .overlay(alignment: .leading) {
+                    Marquee(speed: isIn ? 28 : 22, reversed: !isIn) {
+                        HStack(spacing: R.spacingSpace16) {
+                            ForEach(items, id: \.self) { item in
+                                Text(item)
+                                    .editorialDisplay(DisplaySize.title)
+                                    .foregroundStyle(isIn ? M.textPrimary : M.textTertiary)
+                                    .strikethrough(!isIn, color: M.textTertiary)
+                                Text(isIn ? "✦" : "—")
+                                    .backstageText(.label2)
+                                    .foregroundStyle(isIn ? M.textPurple : M.textTertiary)
+                            }
+                        }
+                        .padding(.trailing, R.spacingSpace16)
+                    }
+                }
+                .clipped()
+                .mask {
+                    LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.08),
+                                           .init(color: .black, location: 0.92), .init(color: .clear, location: 1)],
+                                   startPoint: .leading, endPoint: .trailing)
+                }
+        }
+        .padding(.leading, R.spacingSpace16)
     }
 }
 
