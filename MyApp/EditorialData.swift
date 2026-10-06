@@ -66,6 +66,8 @@ struct Product: Identifiable {
     let category: String
     let isNew: Bool
     let art: Art
+    /// Shelf price. Placeholder values until catalogue data lands.
+    var price: String = ""
 }
 
 /// A piece that completes a look with a staple.
@@ -168,11 +170,13 @@ struct Palette: Identifiable {
     let hexes: [UInt32]
     /// One name per colour in `hexes`.
     let shades: [String]
+    /// How many shoot photos the palette has (palette_<id>_1 … _n); at least four for the card grid.
+    var lookCount = 6
 
     var looks: [Art] {
         let symbols = ["figure.stand", "figure.walk", "figure.wave", "figure.stand", "figure.walk"]
         let n = hexes.count
-        return (0..<6).map { i in
+        return (0..<lookCount).map { i in
             Art(
                 "palette_\(id)_\(i + 1)",
                 [hexes[i % n], hexes[(i + 1) % n], hexes[(i + 2) % n]],
@@ -372,21 +376,21 @@ enum EditorialData {
 
     static let products: [Product] = [
         Product(name: "Scarlet wool overcoat", brand: "H&M", mark: "H&M",
-                category: "Outerwear", isNew: false, art: Art("rack_hm_overcoat", [0x7A1A12, 0xC8402F, 0xE9D8C8], seed: 3)),
+                category: "Outerwear", isNew: false, art: Art("rack_hm_overcoat", [0x7A1A12, 0xC8402F, 0xE9D8C8], seed: 3), price: "₹5,999"),
         Product(name: "Sunburst track set", brand: "adidas", mark: "adidas",
-                category: "Streetwear", isNew: true, art: Art("rack_adidas_popper", [0xB97A22, 0xE5AC48, 0xF5E2B6], symbol: "figure.walk", seed: 5)),
+                category: "Streetwear", isNew: true, art: Art("rack_adidas_popper", [0xB97A22, 0xE5AC48, 0xF5E2B6], symbol: "figure.walk", seed: 5), price: "₹7,999"),
         Product(name: "Cocoa fit-and-flare dress", brand: "Zara", mark: "ZARA",
-                category: "Dresses", isNew: true, art: Art("rack_zara_dress", [0x3B2219, 0x5A3426, 0xDCE8E6], seed: 8)),
+                category: "Dresses", isNew: true, art: Art("rack_zara_dress", [0x3B2219, 0x5A3426, 0xDCE8E6], seed: 8), price: "₹4,290"),
         Product(name: "Acid-wash pinafore dress", brand: "Blu", mark: "blu",
-                category: "Denim", isNew: false, art: Art("rack_blu_pinafore", [0x3A3A3C, 0xC98E9A, 0xEDEDED], seed: 13)),
+                category: "Denim", isNew: false, art: Art("rack_blu_pinafore", [0x3A3A3C, 0xC98E9A, 0xEDEDED], seed: 13), price: "₹2,799"),
         Product(name: "Patchwork denim co-ord", brand: "Bonkers Corner", mark: "BNKR",
-                category: "Denim", isNew: true, art: Art("rack_bonkers_patchwork", [0x3E6A9E, 0xE0407A, 0xF2C94C], symbol: "figure.walk", seed: 29)),
+                category: "Denim", isNew: true, art: Art("rack_bonkers_patchwork", [0x3E6A9E, 0xE0407A, 0xF2C94C], symbol: "figure.walk", seed: 29), price: "₹3,499"),
         Product(name: "Marigold kaftan dress", brand: "Nicobar", mark: "NICO\nBAR",
-                category: "Ethnic", isNew: false, art: Art("rack_nicobar_kaftan", [0xF2E7D3, 0xE0A23A, 0x6A3D24], seed: 17)),
+                category: "Ethnic", isNew: false, art: Art("rack_nicobar_kaftan", [0xF2E7D3, 0xE0A23A, 0x6A3D24], seed: 17), price: "₹4,950"),
         Product(name: "Washed leather biker", brand: "Snitch", mark: "SNI\nTCH",
-                category: "Outerwear", isNew: false, art: Art("rack_snitch_biker", [0x151515, 0x3A2A21, 0x8A5A3B], seed: 19)),
+                category: "Outerwear", isNew: false, art: Art("rack_snitch_biker", [0x151515, 0x3A2A21, 0x8A5A3B], seed: 19), price: "₹4,499"),
         Product(name: "Lucky cat graphic tee", brand: "The Souled Store", mark: "TSS",
-                category: "Streetwear", isNew: false, art: Art("rack_tss_tee", [0xE9E2D4, 0x2D4FA8, 0xEDEDED], symbol: "tshirt.fill", seed: 31)),
+                category: "Streetwear", isNew: false, art: Art("rack_tss_tee", [0xE9E2D4, 0x2D4FA8, 0xEDEDED], symbol: "tshirt.fill", seed: 31), price: "₹899"),
     ]
 
     static let staples: [Staple] = [
@@ -458,7 +462,7 @@ enum EditorialData {
         "Cable-knit vest": [
             ("Cream cable cardigan", "Doodlage", "₹3,190", "palette_sage-linen_2", .center, 1),
             ("Ribbed knit vest", "Snitch", "₹1,899", "palette_butter-denim_2", .center, 1),
-            ("Argyle sweater vest", "H&M", "₹1,999", "palette_rose-clay_6", .center, 1),
+            ("Argyle sweater vest", "H&M", "₹1,999", "photo_rose_6", .center, 1),
         ],
         "Light-wash mom jeans": [
             ("Patchwork mom jeans", "Bonkers Corner", "₹2,199", "rack_bonkers_jeans", .center, 1),
@@ -508,12 +512,19 @@ enum EditorialData {
     ]
 
     static let plans: [Plan] = [
+        Plan(title: "Concert night", lines: ["concert", "night"],
+             cards: [Art("plan_concert_hero", [0x1A1A1A, 0x8C1F2A], seed: 563),
+                     Art("rack_snitch_biker", [0x08060F, 0xFF3DA5], seed: 560),
+                     Art("rack_bonkers_patchwork", [0x08060F, 0x7B5CFF], seed: 561),
+                     Art("rack_tss_tee", [0x08060F, 0xFF3DA5], seed: 562)]),
+        Plan(title: "Diwali parties", lines: ["diwali", "parties"],
+             cards: [Art("plan_diwali_hero", [0xB8542A, 0xF2D2A9], seed: 503)]
+                + looks("plan_diwali", [[0x3A0E12, 0xC8963E], [0x1F1A12, 0xD9B45A], [0x5C1020, 0xF2D49B]], count: 3, seed: 500)),
         Plan(title: "Date night", lines: ["date night"],
              cards: looks("plan_first_date", [[0x1A1A1A, 0x8C2F39], [0x2B1E2E, 0xD08A8A], [0x101820, 0xC9B79A]], count: 3, seed: 520)),
         Plan(title: "Activewear", lines: ["activewear"],
-             cards: looks("plan_active", [[0x1E3350, 0x86B6DE], [0x9FB6C9, 0xF4EEE2], [0x7A1A12, 0xE5AC48]], count: 3, seed: 550)),
-        Plan(title: "Diwali parties", lines: ["diwali", "parties"],
-             cards: looks("plan_diwali", [[0x3A0E12, 0xC8963E], [0x1F1A12, 0xD9B45A], [0x5C1020, 0xF2D49B]], count: 3, seed: 500)),
+             cards: [Art("plan_active_hero", [0x1E2A44, 0xF4F1EA], seed: 553)]
+                + looks("plan_active", [[0x1E3350, 0x86B6DE], [0x9FB6C9, 0xF4EEE2], [0x7A1A12, 0xE5AC48]], count: 3, seed: 550)),
         Plan(title: "Sunday brunch", lines: ["sunday", "brunch"],
              cards: looks("plan_brunch", [[0xF2E2B8, 0xC98B5B], [0x9FB6C9, 0xF4EEE2], [0xE8C7A0, 0x6E8B5A]], count: 3, seed: 510)),
         Plan(title: "Wedding guest", lines: ["wedding", "guest"],
@@ -524,12 +535,13 @@ enum EditorialData {
 
     /// Extra looks per plan, drawn from the shoot library (reused photography until a real shoot lands).
     static let planGalleries: [String: [String]] = [
-        "Date night": ["look_burgundy_muse", "plan_wedding_2", "palette_rose-clay_5", "rack_zara_blazer", "look_parisian_edge"],
+        "Date night": ["look_burgundy_muse", "plan_wedding_2", "photo_rose_5", "rack_zara_blazer", "look_parisian_edge"],
         "Activewear": ["rack_adidas_track", "palette_butter-denim_6", "staple_white_tee_2", "rack_tss_tee", "palette_slate-noir_2"],
-        "Diwali parties": ["rack_nicobar_kaftan", "plan_wedding_1", "plan_wedding_3", "look_burgundy_muse", "palette_rose-clay_3"],
-        "Sunday brunch": ["palette_butter-denim_1", "palette_sage-linen_2", "staple_white_tee_1", "palette_rose-clay_6", "look_quiet_luxury"],
-        "Wedding guest": ["plan_diwali_3", "rack_nicobar_kaftan", "plan_diwali_1", "look_burgundy_muse", "palette_rose-clay_1"],
+        "Diwali parties": ["rack_nicobar_kaftan", "plan_wedding_1", "plan_wedding_3", "look_burgundy_muse", "photo_rose_3"],
+        "Sunday brunch": ["palette_butter-denim_1", "palette_sage-linen_2", "staple_white_tee_1", "photo_rose_6", "look_quiet_luxury"],
+        "Wedding guest": ["plan_diwali_3", "rack_nicobar_kaftan", "plan_diwali_1", "look_burgundy_muse", "photo_rose_1"],
         "Office to after-hours": ["staple_blazer_1", "staple_blazer_2", "staple_blazer_3", "rack_zara_blazer", "look_camel_coat"],
+        "Concert night": ["look_parisian_edge", "rack_blu_trucker", "palette_slate-noir_4", "rack_adidas_popper", "plan_active_3"],
     ]
 
     /// Caption per gallery look (same order as `Plan.gallery`). Placeholder SKUs until catalogue data lands.
@@ -540,12 +552,12 @@ enum EditorialData {
             ("Sharp black blazer", "Zara"), ("Striped Breton top", "Cord"),
         ],
         "Activewear": [
-            ("Seamless sports bra", "Adidas"), ("Track jacket", "Adidas"), ("High-rise leggings", "Adidas"),
+            ("Polo tee and lace track pants", "adidas"), ("Seamless sports bra", "Adidas"), ("Track jacket", "Adidas"), ("High-rise leggings", "Adidas"),
             ("Retro track top", "Adidas"), ("Relaxed denim shorts", "Butter & Denim"), ("Oversized white tee", "The Souled Store"),
             ("Graphic boxy tee", "The Souled Store"), ("Slate zip hoodie", "Gully Labs"),
         ],
         "Diwali parties": [
-            ("Gold tissue kurta", "Nicobar"), ("Mirror-work lehenga", "Doodlage"), ("Brocade bandhgala", "Nicobar"),
+            ("Rust silk kurta set", "Nicobar"), ("Gold tissue kurta", "Nicobar"), ("Mirror-work lehenga", "Doodlage"), ("Brocade bandhgala", "Nicobar"),
             ("Printed silk kaftan", "Nicobar"), ("Embroidered anarkali", "Cord"), ("Zari border saree", "Nicobar"),
             ("Burgundy wrap midi", "Doodlage"), ("Clay silk co-ord", "Cord"),
         ],
@@ -564,17 +576,22 @@ enum EditorialData {
             ("Double-breasted blazer", "Zara"), ("Oversized check blazer", "Cord"), ("Cropped tux blazer", "Zara"),
             ("Sharp black blazer", "Zara"), ("Longline camel coat", "Cord"),
         ],
+        "Concert night": [
+            ("Graphic tee and cargo denim", "The Souled Store"), ("Washed leather biker", "Snitch"), ("Patchwork denim co-ord", "Bonkers Corner"), ("Lucky cat graphic tee", "The Souled Store"),
+            ("Black trench with shades", "Cord"), ("Denim trucker jacket", "Blu"), ("Slate cargo set", "Gully Labs"),
+            ("Popper track set", "adidas"), ("Mesh tank and joggers", "adidas"),
+        ],
     ]
 
     static let palettes: [Palette] = [
         Palette(id: "butter-denim", name: "Butter & Denim", hexes: [0x86B6DE, 0x5C3A1E, 0xF6E27A],
                 shades: ["Denim", "Cocoa", "Butter"]),
-        Palette(id: "slate-noir", name: "Slate Noir", hexes: [0x7C8794, 0x5B4E45, 0x2B211C, 0x5A5632],
-                shades: ["Slate", "Taupe", "Espresso", "Moss"]),
+        Palette(id: "slate-noir", name: "Slate Noir", hexes: [0x7C8794, 0x5B4E45, 0x2B211C, 0x5A5632, 0xC8A27A],
+                shades: ["Slate", "Taupe", "Espresso", "Moss", "Camel"]),
         Palette(id: "midnight-olive", name: "Midnight Olive", hexes: [0x2F3E4E, 0x2A1E18, 0x6E625A, 0xA9A47E],
                 shades: ["Midnight", "Coffee", "Stone", "Olive"]),
-        Palette(id: "rose-clay", name: "Rose Clay", hexes: [0xD9A5A0, 0x8C4F3F, 0xF1E4D8],
-                shades: ["Rose", "Clay", "Bone"]),
+        Palette(id: "rose-clay", name: "Rose Clay", hexes: [0xE3B3C5, 0x5E2635, 0x3B241D, 0xE3D8C6],
+                shades: ["Blush", "Wine", "Cocoa", "Cream"], lookCount: 4),
         Palette(id: "sage-linen", name: "Sage Linen", hexes: [0x9FAF90, 0xE8E2D0, 0x4A5340],
                 shades: ["Sage", "Linen", "Fern"]),
     ]
@@ -594,8 +611,8 @@ enum EditorialData {
             ("Coffee suede boots", "Gully Labs"), ("Midnight satin shirt", "Zara"), ("Olive field jacket", "Cord"),
         ],
         "rose-clay": [
-            ("Rose linen co-ord", "Doodlage"), ("Clay wrap skirt", "Cord"), ("Blush silk blouse", "Nicobar"),
-            ("Terracotta tote", "Nappa Dori"), ("Bone linen trousers", "Doodlage"), ("Dusty pink knit vest", "Cord"),
+            ("Pink stripe boyfriend shirt", "Cord"), ("Cocoa pinstripe trousers", "Doodlage"),
+            ("Ivory wide-leg trousers", "Nicobar"), ("Blush cropped jacket", "Cord"),
         ],
         "sage-linen": [
             ("Sage linen shirt", "Doodlage"), ("Linen wide-leg trousers", "Cord"), ("Fern overshirt", "Gully Labs"),

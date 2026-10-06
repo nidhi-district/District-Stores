@@ -14,7 +14,7 @@ struct HomegrownSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: headerGap) {
-            SectionHeader(number: 1, lines: ["homegrown &", "unfiltered"])
+            SectionHeader(number: 1, lines: ["homegrown & unfiltered"])
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: R.spacingSpace4) {
                     ForEach(EditorialData.stories) { story in
@@ -155,7 +155,7 @@ struct RackSection: View {
 
     var body: some View {
         VStack(spacing: headerGap) {
-            SectionHeader(number: 2, lines: ["hot off", "the rack"])
+            SectionHeader(number: 2, lines: ["hot off the rack"])
 
             VStack(spacing: R.spacingSpace24) {
                 carousel
@@ -304,12 +304,20 @@ struct RackSection: View {
 
     private var caption: some View {
         VStack(spacing: R.spacingSpace4) {
-            Text(current.brand)
-                .backstageText(.label2)
-                .foregroundStyle(M.textSecondary)
             Text(current.name)
                 .backstageText(.caption)
                 .foregroundStyle(M.textPrimary)
+            HStack(spacing: R.spacingSpace8) {
+                Text(current.brand)
+                    .foregroundStyle(M.textSecondary)
+                if !current.price.isEmpty {
+                    Text("·").foregroundStyle(M.textTertiary)
+                    Text(current.price)
+                        .foregroundStyle(M.textSecondary)
+                        .monospacedDigit()
+                }
+            }
+            .backstageText(.label2)
         }
         .multilineTextAlignment(.center)
         .padding(.horizontal, R.spacingSpace16)
@@ -387,55 +395,35 @@ struct NewBadge: View {
 
 // MARK: - Pull quote
 
-/// Magazine pull quote set in the display face: the line breaks are composed, words light up as
-/// the quote scrolls into view, and the key word lands in District purple. A quieter aside answers
-/// it from the right.
+/// Big-type pull quote: a Stores-green rule down the left, an oversized green quotation mark, and the
+/// line set large in Playfair Display (the key word in italic), its words lighting up as the quote
+/// scrolls into view.
 struct PullQuote: View {
     @Environment(\.editorialViewport) private var viewport
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var progress: CGFloat = 0
 
-    /// Composed lines of the main quote; the last word is the accent.
-    private let lines = [["dress", "like"], ["the", "city", "is"], ["watching."]]
-    private var wordCount: Int { lines.joined().count }
+    private let words = "Dress like the city is watching. It usually is.".split(separator: " ").map(String.init)
+    /// The word set in italic for emphasis.
+    private let accentWord = "watching."
 
     var body: some View {
         HStack(alignment: .top, spacing: R.spacingSpace16) {
             Rectangle()
-                .fill(LinearGradient(colors: [M.iconBrand, M.iconBrand.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .fill(LinearGradient(colors: [M.iconAccentGreen, M.iconAccentGreen.opacity(0)], startPoint: .top, endPoint: .bottom))
                 .frame(width: R.stroke2Px)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: R.spacingSpace0) {
+            VStack(alignment: .leading, spacing: R.spacingSpace12) {
                 Text("“")
-                    .editorialDisplay(96)
-                    .foregroundStyle(M.textPurple)
+                    .font(.custom("PlayfairDisplay-Regular", size: 96, relativeTo: .largeTitle))
+                    .foregroundStyle(M.iconAccentGreen)
                     .frame(height: 48, alignment: .top)
                     .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: -DisplaySize.quote * 0.22) {
-                    ForEach(lines.indices, id: \.self) { i in
-                        line(i)
-                            .editorialDisplay(DisplaySize.quote)
-                            .modifier(KineticLine(index: i))
-                    }
-                }
-                .animation(.easeOut(duration: 0.2), value: progress)
-
-                HStack(spacing: R.spacingSpace12) {
-                    Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
-                    Text("it usually is.")
-                        .editorialDisplay(DisplaySize.title)
-                        .foregroundStyle(progress >= 1 ? M.textSecondary : M.textTertiary)
-                        .fixedSize()
-                }
-                .padding(.top, R.spacingSpace16)
-                .animation(.easeOut(duration: 0.3), value: progress >= 1)
-
-                Text("The District Style Desk")
-                    .backstageText(.specialTitle)
-                    .foregroundStyle(M.textPurple)
-                    .padding(.top, R.spacingSpace16)
+                quote
+                    .font(.custom("PlayfairDisplay-Regular", size: DisplaySize.quote, relativeTo: .title))
+                    .lineSpacing(2)
+                    .animation(.easeOut(duration: 0.15), value: progress)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -451,18 +439,17 @@ struct PullQuote: View {
             progress = min(1, max(0, (viewport * 0.85 - top) / (viewport * 0.5)))
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Dress like the city is watching. It usually is. The District Style Desk")
+        .accessibilityLabel("Dress like the city is watching. It usually is.")
     }
 
-    /// One composed line; words before the reading point are lit, the accent word turns purple.
-    private func line(_ i: Int) -> Text {
-        let lit = reduceMotion ? wordCount : Int((progress * CGFloat(wordCount)).rounded(.up))
-        let start = lines[..<i].joined().count
-        return lines[i].enumerated().reduce(Text("")) { text, word in
-            let index = start + word.offset
-            let isAccent = index == wordCount - 1
-            let colour: Color = index < lit ? (isAccent ? M.textPurple : M.textPrimary) : M.textTertiary
-            let piece = Text(word.offset == 0 ? word.element : " " + word.element).foregroundStyle(colour)
+    /// Words before the reading point are lit; the rest wait in tertiary grey.
+    private var quote: Text {
+        let lit = reduceMotion ? words.count : Int((progress * CGFloat(words.count)).rounded(.up))
+        return words.enumerated().reduce(Text("")) { text, word in
+            var piece = Text(word.element + " ").foregroundStyle(word.offset < lit ? M.textPrimary : M.textTertiary)
+            if word.element == accentWord {
+                piece = piece.font(.custom("PlayfairDisplay-Italic", size: DisplaySize.quote, relativeTo: .title))
+            }
             return Text("\(text)\(piece)")
         }
     }
@@ -488,13 +475,12 @@ struct StaplesSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: headerGap) {
-            SectionHeader(number: 3, lines: ["what goes", "well with?"])
+            SectionHeader(number: 3, lines: ["what goes well with?"])
             tabs
 
-            PairingSplit(staple: staple)
+            StapleLooks(staple: staple)
                 .id(staple.id)
                 .transition(.opacity)
-                .padding(.horizontal, R.spacingSpace16)
         }
         .animation(.easeInOut(duration: 0.3), value: selected)
         .sensoryFeedback(.selection, trigger: selected)
@@ -553,199 +539,102 @@ struct StaplesSection: View {
     }
 }
 
-/// The split card: fixed staple on the left, a swipeable deck of pairings on the right.
-struct PairingSplit: View {
+/// Whole looks built on the chosen staple, so it is seen worn rather than beside loose pieces.
+/// Tap a look to open the lookbook at it; the closing card opens it from the first look.
+struct StapleLooks: View {
     let staple: Staple
-    @State private var page: Int? = 0
-    @State private var studio: Studio?
-    @Namespace private var zoom
+    @State private var cover: Cover?
 
-    /// Opens the full-screen mix-and-match on a given pairing.
-    struct Studio: Identifiable {
-        let id: Int
+    enum Cover: Identifiable {
+        case look(Int), studio
+        var id: Int {
+            switch self {
+            case .look(let i): i
+            case .studio: -1
+            }
+        }
     }
-    @State private var onScreen = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    @Environment(\.editorialViewport) private var viewport
 
-    private let height: CGFloat = 340
-    /// Seconds each pairing stays before the deck turns on its own.
-    private let dwell: Double = 1.8
-    private let seam = R.spacingSpace4 / 2
+    private let size = CGSize(width: 232, height: 320)
 
-    private var index: Int { page ?? 0 }
-    private var pairs: [Pairing] { staple.pairs }
-    private var onViewAll: Bool { index >= pairs.count }
+    private func lookName(_ i: Int) -> String { "Look \(String(format: "%02d", i + 1))" }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace16) {
-            GeometryReader { geo in
-                let left = (geo.size.width - seam) * 0.42
-                HStack(spacing: seam) {
-                    stapleSide.frame(width: left)
-                    deck
-                }
-                .overlay(alignment: .topLeading) {
-                    coin.position(x: left + seam / 2, y: geo.size.height / 2)
-                }
-            }
-            .frame(height: height)
-            .clipShape(EditorialCard.shape)
-            .zoomSource(id: "studio-\(staple.id)", in: zoom)
-            .onGeometryChange(for: Bool.self) { proxy in
-                let frame = proxy.frame(in: .global)
-                let screen = viewport > 0 ? viewport : 900
-                return frame.minY < screen * 0.85 && frame.maxY > screen * 0.15
-            } action: { onScreen = $0 }
-
-            caption
-        }
-        // Turn to the next page after a pause (pairings, then "View all", then round again); any swipe
-        // restarts the countdown.
-        .task(id: Autoplay(page: index, running: autoplays)) {
-            guard autoplays, pairs.count > 1 else { return }
-            // Rest a little longer on "View all" before looping back to the first pairing.
-            try? await Task.sleep(for: .seconds(onViewAll ? dwell * 1.6 : dwell))
-            guard !Task.isCancelled else { return }
-            withAnimation(.smooth(duration: 0.45)) { page = (index + 1) % (pairs.count + 1) }
-        }
-        .readerCover(item: $studio) { s in
-            StapleStudioView(staple: staple, start: s.id)
-                .zoomTransition(id: "studio-\(staple.id)", in: zoom)
-        }
-        .sensoryFeedback(.impact(weight: .light), trigger: studio?.id)
-    }
-
-    private struct Autoplay: Equatable {
-        let page: Int
-        let running: Bool
-    }
-
-    private var autoplays: Bool { onScreen && studio == nil && !reduceMotion && !voiceOver }
-
-    private func openStudio() {
-        studio = Studio(id: min(index, pairs.count - 1))
-    }
-
-    private var stapleSide: some View {
-        ArtView(art: staple.thumb)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: openStudio)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(staple.title)
-        .accessibilityHint("Opens mix and match")
-        .accessibilityAddTraits(.isButton)
-    }
-
-    /// Pairings page past behind a clipped window; each photo eases in from a slight zoom.
-    private var deck: some View {
         ScrollView(.horizontal) {
-            LazyHStack(spacing: R.spacingSpace0) {
-                ForEach(Array(pairs.enumerated()), id: \.offset) { i, pairing in
-                    ArtView(art: pairing.art)
-                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                            content
-                                .scaleEffect(1 + abs(phase.value) * 0.18)
-                                .offset(x: phase.value * -40)
-                        }
-                    .containerRelativeFrame([.horizontal, .vertical])
-                    .clipped()
-                    .contentShape(Rectangle())
-                    .onTapGesture { studio = Studio(id: i) }
-                    .id(i)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(pairing.name) from \(pairing.brand)")
-                    .accessibilityHint("Opens mix and match")
-                    .accessibilityAddTraits(.isButton)
+            LazyHStack(spacing: R.spacingSpace8) {
+                ForEach(staple.looks.indices, id: \.self) { i in
+                    Button { cover = .look(i) } label: { card(i) }
+                        .buttonStyle(PressableStyle())
+                        .accessibilityLabel("\(lookName(i)), styled with the \(staple.title.lowercased())")
+                        .accessibilityHint("Opens the lookbook")
                 }
-                viewAll
-                    .containerRelativeFrame([.horizontal, .vertical])
-                    .id(pairs.count)
+                mixAndMatch
             }
             .scrollTargetLayout()
         }
-        .scrollTargetBehavior(.paging)
-        .scrollPosition(id: $page)
-        .scrollIndicators(.hidden)
-        .overlay(alignment: .bottom) { dots.padding(.bottom, R.spacingSpace12) }
-        .sensoryFeedback(.selection, trigger: page)
-    }
-
-    /// Progress dots on the photo, on a small glass pill.
-    private var dots: some View {
-        HStack(spacing: R.spacingSpace4) {
-            ForEach(0...pairs.count, id: \.self) { i in
-                Capsule()
-                    .fill(i == index ? M.iconWhite : M.iconWhite.opacity(0.45))
-                    .frame(width: i == index ? 14 : 5, height: 5)
+        .carousel()
+        .sensoryFeedback(.impact(weight: .light), trigger: cover?.id)
+        .readerCover(item: $cover) { cover in
+            switch cover {
+            case .look(let i): StapleLookbookView(staple: staple, start: i)
+            case .studio: StapleLookbookView(staple: staple, start: 0)
             }
         }
-        .padding(.horizontal, R.spacingSpace8)
-        .frame(height: 18)
-        .liquidGlass(in: Capsule(), clear: true)
-        .animation(.snappy, value: index)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 
-    private var viewAll: some View {
-        Button { studio = Studio(id: 0) } label: {
+    /// The look, with the staple it is built on pinned in the corner.
+    private func card(_ i: Int) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            ArtView(art: staple.looks[i], parallax: 0.06)
+            ImageScrim(strength: 0.7)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(lookName(i))
+                    .backstageText(.label1)
+                    .foregroundStyle(M.textWhite)
+                Text("with the \(staple.title.lowercased())")
+                    .backstageText(.label2)
+                    .foregroundStyle(M.textSecondary)
+            }
+            .padding(R.spacingSpace16)
+        }
+        .frame(width: size.width, height: size.height)
+        .clipShape(EditorialCard.shape)
+        .overlay(alignment: .topLeading) {
+            ArtView(art: staple.thumb)
+                .frame(width: 36, height: 36)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(M.iconWhite, lineWidth: R.stroke1PlusHalfPx))
+                .elevation(.shadow100)
+                .padding(R.spacingSpace12)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// Closes the rail: a blurred peek of the last look, opening the lookbook from the start.
+    private var mixAndMatch: some View {
+        Button { cover = .studio } label: {
             ZStack {
-                // A blurred peek of the pairings closes the deck.
-                ArtView(art: (pairs.last ?? pairs[0]).art)
+                ArtView(art: staple.looks.last ?? staple.thumb)
                     .blur(radius: 16, opaque: true)
                 M.proposedOverlayScrim.opacity(0.45)
                 VStack(spacing: R.spacingSpace12) {
                     CircleArrow()
-                    Text("View all")
-                        .backstageText(.label2)
-                        .foregroundStyle(M.textWhite)
+                    VStack(spacing: 2) {
+                        Text("See every look")
+                            .backstageText(.label1)
+                            .foregroundStyle(M.textWhite)
+                        Text("\(staple.looks.count) ways to wear it")
+                            .backstageText(.label2)
+                            .foregroundStyle(M.textSecondary)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
-            .contentShape(Rectangle())
+            .frame(width: size.width, height: size.height)
+            .clipShape(EditorialCard.shape)
+            .contentShape(EditorialCard.shape)
         }
         .buttonStyle(PressableStyle())
-        .accessibilityLabel("View all pieces that pair with the \(staple.title.lowercased())")
-    }
-
-    /// The "+" on the seam, a quarter turn per swipe.
-    private var coin: some View {
-        Image(systemName: onViewAll ? "chevron.right" : "plus")
-            .font(.system(size: 14, weight: .bold))
-            .foregroundStyle(M.iconInverse)
-            .contentTransition(.symbolEffect(.replace))
-            .frame(width: 36, height: 36)
-            .background(M.surfaceInverse, in: Circle())
-            .rotationEffect(.degrees(reduceMotion ? 0 : Double(index) * 90))
-            .elevation(.shadow100)
-            .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.7), value: index)
-            .accessibilityHidden(true)
-    }
-
-    /// The pairing's name and brand (the staple is already named in the tab above).
-    private var caption: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace0) {
-            if onViewAll {
-                Text("Every way to wear the \(staple.title.lowercased())")
-                    .backstageText(.label1)
-                    .foregroundStyle(M.textPrimary)
-            } else {
-                Text(pairs[index].name)
-                    .backstageText(.label1)
-                    .foregroundStyle(M.textPrimary)
-                    .lineLimit(1)
-                Text(pairs[index].brand)
-                    .backstageText(.label2)
-                    .foregroundStyle(M.textSecondary)
-            }
-        }
-        .id(index)
-        .transition(.opacity)
-        .animation(.snappy, value: index)
-        .accessibilityElement(children: .combine)
+        .accessibilityLabel("See every way to wear the \(staple.title.lowercased())")
     }
 }
 
@@ -754,7 +643,7 @@ struct PairingSplit: View {
 struct LooksSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: headerGap) {
-            SectionHeader(number: 4, lines: ["cop", "these looks"])
+            SectionHeader(number: 4, lines: ["cop these looks"])
             ScrollView(.horizontal) {
                 LazyHStack(spacing: R.spacingSpace4) {
                     ForEach(EditorialData.looks) { LookCard(look: $0) }
@@ -819,83 +708,6 @@ struct LookCard: View {
     }
 }
 
-// MARK: - The In / Out list
-
-/// A fashion-magazine In / Out list set as two drifting strips: what's in glides by in bright display
-/// type, what's out drifts the other way, struck through and muted. Static under Reduce Motion.
-struct InOutList: View {
-    private let ins = ["butter yellow", "barrel-leg denim", "mesh flats", "quiet tailoring", "polka dots", "sheer layers"]
-    private let outs = ["skinny jeans", "logo mania", "chunky dad sneakers", "neon everything", "micro bags", "matchy sets"]
-
-    var body: some View {
-        VStack(spacing: R.spacingSpace16) {
-            title
-            VStack(spacing: R.spacingSpace12) {
-                row(label: "In", items: ins, isIn: true)
-                Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
-                    .padding(.horizontal, R.spacingSpace16)
-                row(label: "Out", items: outs, isIn: false)
-            }
-            .padding(.vertical, R.spacingSpace16)
-            .overlay(alignment: .top) { Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px) }
-            .overlay(alignment: .bottom) { Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px) }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("The in and out list. In: \(ins.joined(separator: ", ")). Out: \(outs.joined(separator: ", ")).")
-    }
-
-    private var title: some View {
-        HStack(spacing: R.spacingSpace12) {
-            Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
-            Text("THE IN / OUT LIST")
-                .font(.custom("BeVietnamPro-SemiBold", size: 12, relativeTo: .caption))
-                .tracking(2.4)
-                .foregroundStyle(M.textSecondary)
-                .fixedSize()
-            Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
-        }
-        .padding(.horizontal, R.spacingSpace16)
-    }
-
-    /// A pinned tag on the left, and the items drifting past behind a soft fade.
-    private func row(label: String, items: [String], isIn: Bool) -> some View {
-        HStack(spacing: R.spacingSpace12) {
-            Text(label.uppercased())
-                .backstageText(.specialTitle)
-                .foregroundStyle(isIn ? M.textInverse : M.textSecondary)
-                .frame(width: 44, height: 24)
-                .background(isIn ? M.surfaceInverse : Color.clear, in: Capsule())
-                .overlay(Capsule().strokeBorder(isIn ? Color.clear : M.borderModerate, lineWidth: R.stroke1Px))
-
-            Color.clear
-                .frame(height: 32)
-                .overlay(alignment: .leading) {
-                    Marquee(speed: isIn ? 28 : 22, reversed: !isIn) {
-                        HStack(spacing: R.spacingSpace16) {
-                            ForEach(items, id: \.self) { item in
-                                Text(item)
-                                    .editorialDisplay(DisplaySize.title)
-                                    .foregroundStyle(isIn ? M.textPrimary : M.textTertiary)
-                                    .strikethrough(!isIn, color: M.textTertiary)
-                                Text(isIn ? "✦" : "—")
-                                    .backstageText(.label2)
-                                    .foregroundStyle(isIn ? M.textPurple : M.textTertiary)
-                            }
-                        }
-                        .padding(.trailing, R.spacingSpace16)
-                    }
-                }
-                .clipped()
-                .mask {
-                    LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.08),
-                                           .init(color: .black, location: 0.92), .init(color: .clear, location: 1)],
-                                   startPoint: .leading, endPoint: .trailing)
-                }
-        }
-        .padding(.leading, R.spacingSpace16)
-    }
-}
-
 // MARK: - Fits for every plan
 
 /// Swipeable occasion collections: a cover photo with the occasion name, and a strip of its
@@ -906,7 +718,7 @@ struct PlansSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: headerGap) {
-            CoverHeader(number: 5, lead: "fits for", headline: "every plan")
+            SectionHeader(number: 5, lines: ["fits for every plan"]) // Not on the page; see EditorialView.
             ScrollView(.horizontal) {
                 LazyHStack(spacing: R.spacingSpace12) {
                     ForEach(EditorialData.plans) { plan in
@@ -926,6 +738,8 @@ struct PlansSection: View {
     }
 }
 
+/// An occasion's collection: a cover photo with its name and look count, then a strip of its
+/// looks ending in a blurred "+N" tile.
 struct PlanCollectionCard: View {
     let plan: Plan
     var open: () -> Void = {}
@@ -983,10 +797,145 @@ struct PlanCollectionCard: View {
     }
 }
 
+// MARK: - Shop by vibe
+
+/// Each card leads with an illustrated vibe, then three pieces to wear to it. Tapping a card opens that plan's gallery.
+struct VibeSection: View {
+    @State private var opened: Plan?
+    @Namespace private var zoom
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: headerGap) {
+            SectionHeader(number: 5, lines: ["fits for every plan"])
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: R.spacingSpace8) {
+                    ForEach(Vibe.all) { vibe in
+                        if let plan = EditorialData.plans.first(where: { $0.title == vibe.plan }) {
+                            VibeCard(vibe: vibe, plan: plan) { opened = plan }
+                                .zoomSource(id: "vibe-\(vibe.id)", in: zoom)
+                        }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .carousel()
+        }
+        .readerCover(item: $opened) { plan in
+            PlanGalleryView(plan: plan)
+                .zoomTransition(id: "vibe-\(Vibe.all.first { $0.plan == plan.title }?.id ?? "")", in: zoom)
+        }
+        .sensoryFeedback(.impact(weight: .light), trigger: opened?.id)
+    }
+}
+
+/// One vibe: its illustration, name and the colours drawn for it while the illustration loads
+/// (illustration colours, not UI tokens).
+struct Vibe: Identifiable {
+    let id: String
+    let name: String
+    /// The plan whose looks the card shows.
+    let plan: String
+    let image: String
+    /// Deep and accent colours from the illustration, for its placeholder.
+    let ground: UInt32
+    let accent: UInt32
+
+    static let all: [Vibe] = [
+        Vibe(id: "diwali", name: "Diwali", plan: "Diwali parties", image: "vibe_diwali", ground: 0x2A1210, accent: 0xF4C25B),
+        Vibe(id: "concert", name: "Concert", plan: "Concert night", image: "vibe_concert", ground: 0x1F0B2C, accent: 0xFF6BC4),
+        Vibe(id: "active", name: "Active", plan: "Activewear", image: "vibe_active", ground: 0x0E2216, accent: 0xA8E27A),
+        Vibe(id: "brunch", name: "Brunch", plan: "Sunday brunch", image: "vibe_brunch", ground: 0x2E2219, accent: 0xF7B98C),
+    ]
+}
+
+/// A vibe in the house style: its illustration as the cover with the name set in display type,
+/// then three pieces listed like a contents page, on the shared card surface.
+struct VibeCard: View {
+    let vibe: Vibe
+    let plan: Plan
+    var open: () -> Void = {}
+
+    private let width: CGFloat = 300
+    private let artHeight: CGFloat = 140
+
+    var body: some View {
+        let pieces = Array(plan.looks.prefix(3))
+        Button(action: open) {
+            VStack(alignment: .leading, spacing: R.spacingSpace0) {
+                ZStack(alignment: .bottomLeading) {
+                    ArtView(art: Art(vibe.image, [vibe.ground, vibe.accent]), parallax: 0.1)
+                        .frame(width: width, height: artHeight)
+                        .clipped()
+                    ImageScrim(strength: 0.75)
+                    Text(vibe.name.lowercased())
+                        .editorialDisplay(DisplaySize.section)
+                        .foregroundStyle(M.textWhite)
+                        .padding(R.spacingSpace16)
+                }
+                .frame(height: artHeight)
+
+                VStack(spacing: R.spacingSpace0) {
+                    ForEach(pieces.indices, id: \.self) { i in
+                        row(pieces[i])
+                        if i < pieces.count - 1 {
+                            Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
+                        }
+                    }
+                }
+                .padding(.horizontal, R.spacingSpace16)
+                .padding(.vertical, R.spacingSpace4)
+
+                HStack(spacing: R.spacingSpace4) {
+                    Text("See all \(plan.count) looks")
+                        .backstageText(.label2)
+                        .foregroundStyle(M.textPrimary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(M.iconTertiary)
+                    Spacer(minLength: 0)
+                }
+                .padding(R.spacingSpace16)
+                .overlay(alignment: .top) { Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px) }
+            }
+            .frame(width: width)
+            .background(M.surfacePrimary)
+            .clipShape(EditorialCard.shape)
+            .overlay(EditorialCard.shape.strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(vibe.name). \(pieces.map { "\($0.name) by \($0.brand)" }.joined(separator: ", "))")
+        .accessibilityHint("Opens the \(plan.title.lowercased()) looks")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    /// A piece: thumbnail, brand, name, and where to find it.
+    private func row(_ look: FeedLook) -> some View {
+        HStack(spacing: R.spacingSpace12) {
+            ArtView(art: look.art)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner8))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(look.name)
+                    .backstageText(.label1)
+                    .foregroundStyle(M.textPrimary)
+                Text(look.brand)
+                    .backstageText(.label2)
+                    .foregroundStyle(M.textSecondary)
+                Text("In store at \(EditorialData.storeAreas[look.brand] ?? "Cyberhub, Gurugram")")
+                    .backstageText(.body3)
+                    .foregroundStyle(M.textTertiary)
+            }
+            .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, R.spacingSpace12)
+    }
+}
+
 // MARK: - Pick your palette
 
-/// Centre-snapping, endlessly looping palette carousel. The focused palette's colours bloom
-/// faintly behind it.
+/// Centre-snapping, endlessly looping palette carousel.
 struct PaletteSection: View {
     /// One slot in the looped rail: the same palettes repeated, each with a unique id.
     private struct Slot: Identifiable {
@@ -1013,7 +962,7 @@ struct PaletteSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: headerGap) {
-            SectionHeader(number: 6, lines: ["pick your", "palette"])
+            SectionHeader(number: 6, lines: ["pick your palette"])
 
             VStack(spacing: R.spacingSpace20) {
                 GeometryReader { geo in
@@ -1065,7 +1014,6 @@ struct PaletteSection: View {
                 .id(current.id)
                 .transition(.opacity)
             }
-            .background { bloom }
             .animation(.easeInOut(duration: 0.4), value: current.id)
         }
         .sensoryFeedback(.selection, trigger: focused)
@@ -1084,41 +1032,17 @@ struct PaletteSection: View {
             withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) { focused = slot.id }
         }
     }
-
-    /// Soft orbs of the focused palette's colours behind the carousel.
-    private var bloom: some View {
-        let hexes = current.hexes
-        let mid = CGFloat(hexes.count - 1) / 2
-        return ZStack {
-            ForEach(hexes.indices, id: \.self) { i in
-                Circle()
-                    .fill(Color(hex: hexes[i]))
-                    .frame(width: 180, height: 180)
-                    .offset(x: (CGFloat(i) - mid) * 80, y: (i.isMultiple(of: 2) ? -1 : 1) * 24)
-            }
-        }
-        .blur(radius: 90)
-        .opacity(0.1)
-        .id(current.id)
-        .transition(.opacity)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
 }
 
-/// Four looks in one palette, a colour wheel that turns with the swipe, and the palette name on a
-/// soft blur. Framed by a hairline ring of its own colours.
+/// Four looks in one palette, its colours as a row of swatch chips, and the palette name on a
+/// soft blur, with a plain hairline border.
 struct PaletteCard: View {
     let palette: Palette
     let number: Int
     let size: CGSize
     var open: () -> Void = {}
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let spin: CGFloat = reduceMotion ? 0 : 0.6
-        let colours = palette.hexes.map { Color(hex: $0) }
-
         Button(action: open) {
             ZStack(alignment: .bottomLeading) {
                 grid
@@ -1132,14 +1056,7 @@ struct PaletteCard: View {
                     }
                 ImageScrim(strength: 0.65)
 
-                PaletteWheel(hexes: palette.hexes, lineWidth: 12)
-                    .frame(width: 68, height: 68)
-                    .padding(R.spacingSpace8)
-                    .background(M.surfacePrimary, in: Circle())
-                    .visualEffect { content, proxy in
-                        content.rotationEffect(.degrees(proxy.frame(in: .scrollView).minX * spin))
-                    }
-                    .elevation(.floating)
+                PaletteSwatches(hexes: palette.hexes)
                     // Sits exactly where the four photos meet.
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -1155,14 +1072,7 @@ struct PaletteCard: View {
             }
             .frame(width: size.width, height: size.height)
             .clipShape(EditorialCard.shape)
-            .overlay(
-                EditorialCard.shape.strokeBorder(
-                    AngularGradient(colors: colours + [colours[0]], center: .center),
-                    lineWidth: R.stroke1PlusHalfPx
-                )
-                .opacity(0.85)
-            )
-            .shadow(color: colours[0].opacity(0.15), radius: 18, y: 10)
+            .overlay(EditorialCard.shape.strokeBorder(M.borderModerate, lineWidth: R.stroke1Px))
         }
         .buttonStyle(PressableStyle())
         .accessibilityElement(children: .ignore)

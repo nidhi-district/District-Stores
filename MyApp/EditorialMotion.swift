@@ -5,9 +5,9 @@ private typealias R = BackstageTokens.Responsive
 
 // MARK: - Sections & scroll tracking
 
-/// Page sections used for wayfinding in the top bar.
+/// Page sections, listed in the colophon's contents and used as scroll targets.
 enum EditorialSection: Int, CaseIterable, Hashable {
-    case stories, rack, staples, looks, plans, palette
+    case stories, rack, staples, looks, /* plans, */ vibes, palette
 
     var title: String {
         switch self {
@@ -15,31 +15,9 @@ enum EditorialSection: Int, CaseIterable, Hashable {
         case .rack: "Hot off the rack"
         case .staples: "What goes well with?"
         case .looks: "Cop these looks"
-        case .plans: "Fits for every plan"
+        // case .plans: "Fits for every plan"
+        case .vibes: "Fits for every plan"
         case .palette: "Pick your palette"
-        }
-    }
-}
-
-struct SectionFramesKey: PreferenceKey {
-    static let defaultValue: [EditorialSection: CGFloat] = [:]
-    static func reduce(value: inout [EditorialSection: CGFloat], nextValue: () -> [EditorialSection: CGFloat]) {
-        value.merge(nextValue()) { $1 }
-    }
-}
-
-struct ContentHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
-}
-
-extension View {
-    /// Reports this section's top edge in the page's scroll coordinate space.
-    func trackSection(_ section: EditorialSection) -> some View {
-        background {
-            GeometryReader { g in
-                Color.clear.preference(key: SectionFramesKey.self, value: [section: g.frame(in: .named("editorial")).minY])
-            }
         }
     }
 }
@@ -155,23 +133,6 @@ private struct BeamShape: Shape {
 }
 
 // MARK: - Drifting background word
-
-// MARK: - Reading progress
-
-struct ReadingProgress: View {
-    let progress: CGFloat
-
-    var body: some View {
-        GeometryReader { g in
-            ZStack(alignment: .leading) {
-                Rectangle().fill(M.borderSubtle)
-                Rectangle().fill(M.borderSelection).frame(width: g.size.width * min(1, max(0, progress)))
-            }
-        }
-        .frame(height: R.stroke2Px)
-        .accessibilityHidden(true)
-    }
-}
 
 // MARK: - Dot field
 

@@ -267,13 +267,11 @@ struct DistrictGlow: View {
 // MARK: - Tab header
 
 /// Header shared by the Stores and Explore tabs: District home button, the tab title over a
-/// location picker, and the profile avatar. `subtitle` replaces the location line when set (the
-/// Explore tab shows the section being read).
+/// location picker, and the profile avatar.
 struct TabHeader: View {
     let title: String
     @Binding var location: String
     let locations: [String]
-    var subtitle: String? = nil
 
     var body: some View {
         HStack(spacing: R.spacingSpace12) {
@@ -289,16 +287,12 @@ struct TabHeader: View {
                         .backstageText(.label1)
                         .foregroundStyle(M.textPrimary)
                     HStack(spacing: R.spacingSpace4) {
-                        if let subtitle {
-                            Text(subtitle).lineLimit(1)
-                        } else {
-                            Text(location).lineLimit(1)
-                            Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
-                        }
+                        Text(location).lineLimit(1)
+                        Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
                     }
                     .backstageText(.body3)
                     .foregroundStyle(M.textSecondary)
-                    .id(subtitle ?? location)
+                    .id(location)
                     .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .top)).combined(with: .opacity))
                 }
                 .clipped()
@@ -306,7 +300,7 @@ struct TabHeader: View {
                 .contentShape(Rectangle())
                 .shadow(color: M.effectsBlackShadow16, radius: 6, y: 1)
             }
-            .accessibilityLabel(subtitle.map { "\(title), \($0)" } ?? "\(title), location \(location)")
+            .accessibilityLabel("\(title), location \(location)")
             .accessibilityHint("Changes location")
 
             Spacer(minLength: 0)
@@ -325,7 +319,7 @@ struct TabHeader: View {
         }
         .padding(.horizontal, R.spacingSpace16)
         .padding(.vertical, R.spacingSpace8)
-        .animation(.easeInOut(duration: 0.3), value: subtitle)
+        .animation(.easeInOut(duration: 0.3), value: location)
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 }
@@ -679,7 +673,7 @@ enum StoresData {
               area: "Cyberhub, DLF Phase 2", products: ["rack_zara_dress", "rack_zara_blazer", "plan_office_1", "plan_office_3"],
               offer: "Bank offers available", inStoreOffer: false, noCostEMI: true),
         Store(name: "Nicobar", mark: "NICO\nBAR", categories: "Fashion | Ethnic • Home", distance: 3.2,
-              area: "Ambience Mall, Gurgaon", products: ["rack_nicobar_kaftan", "plan_diwali_1", "plan_wedding_3", "palette_rose-clay_2"],
+              area: "Ambience Mall, Gurgaon", products: ["rack_nicobar_kaftan", "plan_diwali_1", "plan_wedding_3", "photo_rose_2"],
               offer: "15% off above ₹4,999", inStoreOffer: true, noCostEMI: false),
         Store(name: "Snitch", mark: "SNI\nTCH", categories: "Fashion | Menswear", distance: 2.1,
               area: "Good Earth City Center, Sector 50", products: ["rack_snitch_biker", "staple_denim_1", "palette_midnight-olive_3", "staple_blazer_3"],

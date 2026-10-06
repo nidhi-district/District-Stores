@@ -33,6 +33,8 @@
 		A10000000000000000000034 /* BeVietnamPro-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000034 /* BeVietnamPro-ExtraBold.ttf */; };
 		A10000000000000000000035 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000035 /* Anton-Regular.ttf */; };
 		A10000000000000000000036 /* DMSerifDisplay-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000036 /* DMSerifDisplay-Italic.ttf */; };
+		A10000000000000000000038 /* PlayfairDisplay.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000038 /* PlayfairDisplay.ttf */; };
+		A10000000000000000000039 /* PlayfairDisplay-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000039 /* PlayfairDisplay-Italic.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +65,8 @@
 		A20000000000000000000034 /* BeVietnamPro-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BeVietnamPro-ExtraBold.ttf"; sourceTree = "<group>"; };
 		A20000000000000000000035 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
 		A20000000000000000000036 /* DMSerifDisplay-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSerifDisplay-Italic.ttf"; sourceTree = "<group>"; };
+		A20000000000000000000038 /* PlayfairDisplay.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = PlayfairDisplay.ttf; sourceTree = "<group>"; };
+		A20000000000000000000039 /* PlayfairDisplay-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlayfairDisplay-Italic.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +141,8 @@
 				A20000000000000000000034 /* BeVietnamPro-ExtraBold.ttf */,
 				A20000000000000000000035 /* Anton-Regular.ttf */,
 				A20000000000000000000036 /* DMSerifDisplay-Italic.ttf */,
+				A20000000000000000000038 /* PlayfairDisplay.ttf */,
+				A20000000000000000000039 /* PlayfairDisplay-Italic.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -208,6 +214,8 @@
 				A10000000000000000000034 /* BeVietnamPro-ExtraBold.ttf in Resources */,
 				A10000000000000000000035 /* Anton-Regular.ttf in Resources */,
 				A10000000000000000000036 /* DMSerifDisplay-Italic.ttf in Resources */,
+				A10000000000000000000038 /* PlayfairDisplay.ttf in Resources */,
+				A10000000000000000000039 /* PlayfairDisplay-Italic.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

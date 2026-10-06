@@ -111,8 +111,9 @@ struct SectionHeader: View {
                     .backstageText(.specialTitle)
                     .foregroundStyle(M.textTertiary)
                 Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
-                Image(systemName: "arrow.down.right")
-                    .font(.system(size: 10, weight: .semibold))
+                // A printer's ornament closes the rule; an arrow here read as a tappable link.
+                Image(systemName: "sparkle")
+                    .font(.system(size: 9, weight: .regular))
                     .foregroundStyle(M.iconTertiary)
             }
             .accessibilityHidden(true)
@@ -120,53 +121,6 @@ struct SectionHeader: View {
             EditorialHeadline(lines: lines, size: DisplaySize.section, kinetic: true)
                 .foregroundStyle(M.textPrimary)
                 .accessibilityAddTraits(.isHeader)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, R.spacingSpace16)
-    }
-}
-
-/// Magazine-cover section opener: the numbered rule, then a high-contrast italic serif phrase set
-/// over a towering condensed uppercase line (DM Serif Display Italic over Anton).
-struct CoverHeader: View {
-    let number: Int
-    /// The italic serif lead-in, e.g. "fits for".
-    let lead: String
-    /// The big condensed line, e.g. "every plan".
-    let headline: String
-    @ScaledMetric(relativeTo: .largeTitle) private var scale: CGFloat = 1
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace12) {
-            HStack(spacing: R.spacingSpace8) {
-                Text(String(format: "%02d", number))
-                    .backstageText(.specialTitle)
-                    .foregroundStyle(M.textTertiary)
-                Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
-                Image(systemName: "arrow.down.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(M.iconTertiary)
-            }
-            .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: -10 * scale) {
-                Text(lead)
-                    .font(.custom("DMSerifDisplay-Italic", fixedSize: 30 * scale))
-                    .foregroundStyle(M.textPurple)
-                    .padding(.leading, 2)
-                    .zIndex(1)
-                    .modifier(KineticLine(index: 0))
-                Text(headline.uppercased())
-                    .font(.custom("Anton-Regular", fixedSize: 54 * scale))
-                    .tracking(0.5)
-                    .foregroundStyle(M.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .modifier(KineticLine(index: 1))
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(lead) \(headline)")
-            .accessibilityAddTraits(.isHeader)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, R.spacingSpace16)
@@ -262,6 +216,32 @@ struct PaletteWheel: View {
         }
         .rotationEffect(.degrees(-90))
         .padding(lineWidth / 2)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A palette as overlapping swatch chips on a glass pill, like fabric cuttings fanned out.
+struct PaletteSwatches: View {
+    let hexes: [UInt32]
+    var size: CGFloat = 34
+
+    var body: some View {
+        HStack(spacing: -size * 0.3) {
+            ForEach(hexes.indices, id: \.self) { i in
+                Circle()
+                    .fill(Color(hex: hexes[i]))
+                    // A soft top-left sheen so each chip reads as a material, not a flat dot.
+                    .overlay(Circle().fill(LinearGradient(colors: [M.iconWhite.opacity(0.25), .clear],
+                                                          startPoint: .topLeading, endPoint: .center)))
+                    .overlay(Circle().strokeBorder(M.iconWhite, lineWidth: 2))
+                    .frame(width: size, height: size)
+                    .shadow(color: M.effectsShadowM, radius: 3, x: -1, y: 1)
+                    .zIndex(Double(-i))
+            }
+        }
+        .padding(R.spacingSpace4 + 2)
+        .liquidGlass(in: Capsule(), clear: true)
+        .elevation(.floating)
         .accessibilityHidden(true)
     }
 }
@@ -384,8 +364,9 @@ struct HotspotPin: View {
                 Color.clear
                     .frame(width: 28, height: 28)
                     .liquidGlass(in: Circle(), interactive: true)
-                Image(systemName: "plus")
-                    .font(.system(size: 11, weight: .bold))
+                // A shopping tag: the pin opens the piece and similar options.
+                Image(systemName: "tag.fill")
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(M.iconPrimary)
             }
             .frame(width: 44, height: 44)

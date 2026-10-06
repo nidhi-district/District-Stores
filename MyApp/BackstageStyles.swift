@@ -9,8 +9,8 @@ private typealias R = BackstageTokens.Responsive
 enum BackstageFonts {
     static let faces = [
         "BeVietnamPro-Regular", "BeVietnamPro-Medium", "BeVietnamPro-SemiBold", "BeVietnamPro-Bold", "BeVietnamPro-ExtraBold",
-        // Magazine accent faces, used only for the cover-style section openers.
-        "Anton-Regular", "DMSerifDisplay-Italic",
+        // Magazine accent faces: the cover-style section opener and the pull quote.
+        "Anton-Regular", "DMSerifDisplay-Italic", "PlayfairDisplay", "PlayfairDisplay-Italic",
     ]
 
     /// Registers the bundled faces for this process. Call once at launch.

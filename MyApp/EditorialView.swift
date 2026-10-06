@@ -5,15 +5,11 @@ private typealias R = BackstageTokens.Responsive
 
 struct EditorialView: View {
     @State private var scrollY: CGFloat = 0
-    @State private var sectionTops: [EditorialSection: CGFloat] = [:]
-    @State private var contentHeight: CGFloat = 1
     @Environment(\.tabBarCompactHandler) private var setTabBarCompact
 
     var body: some View {
         GeometryReader { screen in
             let viewport = screen.size.height
-            let active = activeSection(viewport: viewport)
-            let progress = -scrollY / max(1, contentHeight - viewport)
 
             ScrollViewReader { proxy in
                 ZStack(alignment: .top) {
@@ -29,16 +25,19 @@ struct EditorialView: View {
                             .frame(height: 0)
                             .id("top")
 
-                            VStack(spacing: R.spacingSpace40) {
-                                HomegrownSection().trackSection(.stories).id(EditorialSection.stories)
-                                RackSection().trackSection(.rack).id(EditorialSection.rack).revealOnScroll()
-                                TickerStrip()
-                                StaplesSection().trackSection(.staples).id(EditorialSection.staples).revealOnScroll()
+                            VStack(spacing: R.spacingSpace72) {
+                                HomegrownSection().id(EditorialSection.stories)
+                                RackSection().id(EditorialSection.rack).revealOnScroll()
+                                // The strip's own height already leaves air around the tilted tapes,
+                                // so it sits closer to its neighbours than a full section gap.
+                                TickerStrip().padding(.vertical, -R.spacingSpace40)
+                                StaplesSection().id(EditorialSection.staples).revealOnScroll()
                                 PullQuote()
-                                LooksSection().trackSection(.looks).id(EditorialSection.looks).revealOnScroll()
-                                InOutList().revealOnScroll()
-                                PlansSection().trackSection(.plans).id(EditorialSection.plans).revealOnScroll()
-                                PaletteSection().trackSection(.palette).id(EditorialSection.palette).revealOnScroll()
+                                LooksSection().id(EditorialSection.looks).revealOnScroll()
+                                // Collage rail retired; the vibe cards now carry "fits for every plan".
+                                // PlansSection().id(EditorialSection.plans).revealOnScroll()
+                                VibeSection().id(EditorialSection.vibes).revealOnScroll()
+                                PaletteSection().id(EditorialSection.palette).revealOnScroll()
                             }
                             .padding(.top, R.spacingSpace80 + R.spacingSpace16)
 
@@ -47,34 +46,49 @@ struct EditorialView: View {
                             )
                             .padding(.top, R.spacingSpace64)
                         }
-                        .background {
-                            GeometryReader { g in Color.clear.preference(key: ContentHeightKey.self, value: g.size.height) }
-                        }
                     }
                     .scrollIndicators(.hidden)
                     .coordinateSpace(name: "editorial")
+                    // iOS 18+: read the offset straight from the scroll view; the preference is
+                    // the iOS 17 path, and on newer systems it can stop reporting after layout.
+                    .modifier(ExploreScrollTracker(onScroll: scrolled(to:)))
                     .onPreferenceChange(ScrollOffsetKey.self) { y in
-                        // Shrink the floating tab bar while reading down; expand on the way back up or near the top.
-                        let delta = y - scrollY
-                        if y > -40 { setTabBarCompact(false) }
-                        else if delta < -6 { setTabBarCompact(true) }
-                        else if delta > 6 { setTabBarCompact(false) }
-                        scrollY = y
+                        if #available(iOS 18.0, macOS 15.0, *) { return }
+                        scrolled(to: y)
                     }
-                    .onPreferenceChange(SectionFramesKey.self) { sectionTops = $0 }
-                    .onPreferenceChange(ContentHeightKey.self) { contentHeight = $0 }
 
-                    TopBar(scrolled: scrollY < -8, section: active, progress: progress)
+                    TopBar(scrolled: scrollY < -8)
                 }
             }
             .environment(\.editorialViewport, viewport)
         }
     }
 
-    /// The last section whose top has passed ~40% of the screen.
-    private func activeSection(viewport: CGFloat) -> EditorialSection? {
-        let line = viewport * 0.4
-        return EditorialSection.allCases.last { (sectionTops[$0] ?? .infinity) < line }
+    /// `y` is the content's top edge: 0 at rest, negative as the page scrolls down.
+    private func scrolled(to y: CGFloat) {
+        // Shrink the floating tab bar while reading down; expand on the way back up or near the top.
+        let delta = y - scrollY
+        if y > -40 { setTabBarCompact(false) }
+        else if delta < -6 { setTabBarCompact(true) }
+        else if delta > 6 { setTabBarCompact(false) }
+        scrollY = y
+    }
+
+}
+
+private struct ExploreScrollTracker: ViewModifier {
+    let onScroll: (CGFloat) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            content.onScrollGeometryChange(for: CGFloat.self) { geo in
+                -(geo.contentOffset.y + geo.contentInsets.top)
+            } action: { _, y in
+                onScroll(y)
+            }
+        } else {
+            content
+        }
     }
 }
 
@@ -85,24 +99,55 @@ private struct ScrollOffsetKey: PreferenceKey {
 
 // MARK: - Top bar (navigation layer: Liquid Glass)
 
-/// Explore tab header: the shared tab header titled "Explore". While reading, the location line
-/// names the section in view, with a reading-progress hairline underneath.
+/// Explore tab header: the shared tab header titled "Explore". Its content never changes; once
+/// the page scrolls it sits on a frosted bar with a bottom hairline.
 struct TopBar: View {
     let scrolled: Bool
-    let section: EditorialSection?
-    let progress: CGFloat
     @State private var location = "Vatika City"
     private let locations = ["Vatika City", "Golf Course Extension Road", "Cyberhub, DLF Phase 2", "Sector 29"]
 
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     var body: some View {
-        VStack(spacing: R.spacingSpace0) {
-            TabHeader(title: "Explore", location: $location, locations: locations,
-                      subtitle: scrolled ? section?.title : nil)
-            ReadingProgress(progress: progress)
-                .padding(.horizontal, R.spacingSpace16)
-                .opacity(scrolled ? 1 : 0)
+        TabHeader(title: "Explore", location: $location, locations: locations)
+        .background {
+            if scrolled {
+                backdrop
+                    .ignoresSafeArea(edges: .top)
+                    .transition(.opacity)
+            }
         }
         .animation(.easeInOut(duration: 0.25), value: scrolled)
+    }
+
+    /// Once the page moves, the header becomes a frosted bar running up under the status bar,
+    /// lit by the same neutral spotlight as the page so it stays one stage.
+    private var backdrop: some View {
+        GeometryReader { g in
+            let w = g.size.width
+            ZStack(alignment: .top) {
+                if reduceTransparency {
+                    M.backgroundPrimary
+                } else {
+                    Rectangle().fill(.ultraThinMaterial)
+                    M.backgroundPrimary.opacity(0.55)
+                }
+                // The page's spotlight, carried onto the bar.
+                RadialGradient(
+                    colors: [M.iconWhite.opacity(0.12), M.iconWhite.opacity(0.03), M.iconWhite.opacity(0)],
+                    center: .top, startRadius: 0, endRadius: w * 0.75
+                )
+                Ellipse()
+                    .fill(M.iconWhite.opacity(0.14))
+                    .frame(width: w * 0.28, height: 24)
+                    .blur(radius: 20)
+                    .offset(y: -12)
+            }
+            .frame(width: w, height: g.size.height)
+            .overlay(alignment: .bottom) { Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px) }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -129,21 +174,21 @@ struct TickerStrip: View {
 
     private var tapes: some View {
         ZStack {
-            // Back tape: small caps, drifting the other way.
-            // Back tape: barely-there white, so it reads as texture.
+            // Back tape: small caps drifting the other way, in barely-there white so it reads as texture.
             M.textWhite.opacity(0.06)
                 .frame(height: 30)
                 .overlay(alignment: .leading) {
                     Marquee(speed: 24, reversed: true) {
                         Text("NEW IN  ✦  THE DISTRICT EDIT  ✦  FESTIVE '26  ✦  ")
-                            .font(.custom("BeVietnamPro-Bold", size: 12, relativeTo: .caption))
+                            .font(.custom("BeVietnamPro-Regular", size: 12, relativeTo: .caption))
                             .tracking(2.4)
                             .foregroundStyle(M.textWhite.opacity(0.45))
                     }
                 }
-                .rotationEffect(.degrees(4))
+                .rotationEffect(.degrees(7))
 
-            // Front tape: big words with photo stickers between them.
+            // Front tape: words with photo stickers between them, on a solid band with no shadow so
+            // it reads as decoration, not a control.
             M.surfaceSecondary
                 .frame(height: 46)
                 .overlay(alignment: .leading) {
@@ -151,8 +196,8 @@ struct TickerStrip: View {
                         HStack(spacing: R.spacingSpace12) {
                             ForEach(Array(phrases.enumerated()), id: \.offset) { i, phrase in
                                 Text(phrase.text)
-                                    .editorialDisplay(DisplaySize.card)
-                                    .foregroundStyle(M.textPrimary)
+                                    .backstageText(.body2)
+                                    .foregroundStyle(M.textSecondary)
                                 sticker(phrase.photo, tilt: i.isMultiple(of: 2) ? -8 : 6)
                             }
                         }
@@ -160,7 +205,6 @@ struct TickerStrip: View {
                     }
                 }
                 .rotationEffect(.degrees(-2.5))
-                .elevation(.shadow100)
         }
     }
 

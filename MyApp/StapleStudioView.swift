@@ -3,299 +3,212 @@ import SwiftUI
 private typealias M = BackstageTokens.Mapped
 private typealias R = BackstageTokens.Responsive
 
-/// Full-screen mix-and-match for "Goes with everything": the staple holds still on top while its
-/// pairings swipe past underneath, flip-book style. Switch staples with the chips, shuffle for a
-/// surprise, open a piece, or browse the staple's styled looks below.
-struct StapleStudioView: View {
-    private let staples = EditorialData.staples
-    @State private var stapleID: String?
-    @State private var pair: Int?
+/// "What goes well with?" lookbook: every look built on one staple, full screen, swiped through
+/// vertically. Each look shows how it is built — the staple plus the piece it is styled with — and
+/// either piece opens its product page.
+struct StapleLookbookView: View {
+    let staple: Staple
+    @State private var page: Int?
     @State private var opened: Product?
-    @State private var viewing: Int?
+    /// Shows the swipe hint until the first swipe (or a few seconds pass).
+    @State private var showsHint = true
+    @State private var bob = false
+    private let startPage: Int
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(staple: Staple, start: Int) {
-        _stapleID = State(initialValue: staple.id)
-        _pair = State(initialValue: start)
+        self.staple = staple
+        self.startPage = start
+        _page = State(initialValue: start)
     }
 
-    private var staple: Staple { staples.first { $0.id == stapleID } ?? staples[0] }
-    private var index: Int { min(pair ?? 0, staple.pairs.count - 1) }
-    private var pairing: Pairing { staple.pairs[index] }
+    private var index: Int { page ?? 0 }
+    private var count: Int { staple.looks.count }
 
-    /// The staple's styled looks, captioned for the full-screen viewer.
-    private var styled: [FeedLook] {
-        staple.looks.enumerated().map { i, art in
-            FeedLook(art: art, name: "Look \(String(format: "%02d", i + 1))", brand: staple.title)
-        }
-    }
+    /// The piece each look is styled with (pairings repeat when there are more looks than pieces).
+    private func pairing(_ i: Int) -> Pairing { staple.pairs[i % staple.pairs.count] }
 
     var body: some View {
         GeometryReader { screen in
-            let headerHeight = screen.safeAreaInsets.top + 132
             ZStack(alignment: .top) {
-                ScrollView(.vertical) {
-                    VStack(alignment: .leading, spacing: R.spacingSpace32) {
-                        VStack(alignment: .leading, spacing: R.spacingSpace20) {
-                            composer(height: max(440, screen.size.height * 0.58))
-                            details
+                ScrollViewReader { reader in
+                    ScrollView(.vertical) {
+                        LazyVStack(spacing: 0) {
+                            ForEach(staple.looks.indices, id: \.self) { i in
+                                lookPage(i, bottomInset: screen.safeAreaInsets.bottom)
+                                    .containerRelativeFrame([.horizontal, .vertical])
+                                    .id(i)
+                            }
                         }
-                        .id(staple.id)
-                        .transition(.opacity)
-
-                        styledRail
+                        .scrollTargetLayout()
                     }
-                    .padding(.top, headerHeight + R.spacingSpace8)
-                    .padding(.bottom, R.spacingSpace48)
+                    .scrollTargetBehavior(.paging)
+                    .scrollPosition(id: $page)
+                    .scrollIndicators(.hidden)
+                    .onAppear { reader.scrollTo(page) }
                 }
-                .scrollIndicators(.hidden)
-                .ignoresSafeArea(edges: .top)
+                .ignoresSafeArea()
 
-                header
+                header(topInset: screen.safeAreaInsets.top)
             }
+            .overlay(alignment: .trailing) { pageIndicator }
             .overlay {
-                if let viewing {
-                    Lightbox(looks: styled, start: viewing) {
-                        withAnimation(.smooth(duration: 0.25)) { self.viewing = nil }
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                }
+                if showsHint && count > 1 { swipeHint.transition(.opacity) }
             }
         }
+        .onChange(of: page) { _, new in
+            if new != startPage { withAnimation(.easeOut(duration: 0.25)) { showsHint = false } }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(4))
+            withAnimation(.easeOut(duration: 0.4)) { showsHint = false }
+        }
         .background(M.backgroundPrimary.ignoresSafeArea())
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: stapleID)
         .readerCover(item: $opened) { ProductDetailView(product: $0) }
-        .sensoryFeedback(.selection, trigger: pair)
-        .sensoryFeedback(.selection, trigger: stapleID)
+        .sensoryFeedback(.selection, trigger: page)
     }
 
     // MARK: Header
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace20) {
+    private func header(topInset: CGFloat) -> some View {
+        HStack(spacing: R.spacingSpace12) {
             GlassIconButton(systemName: "xmark", label: "Close") { dismiss() }
-                .padding(.horizontal, R.spacingSpace16)
-
-            ScrollView(.horizontal) {
-                GlassGroup(spacing: R.spacingSpace8) {
-                    HStack(spacing: R.spacingSpace8) {
-                        ForEach(staples) { stapleChip($0) }
-                    }
-                }
-            }
-            .contentMargins(.horizontal, R.spacingSpace16, for: .scrollContent)
-            .scrollIndicators(.hidden)
-        }
-        .padding(.top, R.spacingSpace4)
-        .padding(.bottom, R.spacingSpace12)
-        .background {
-            LinearGradient(
-                colors: [M.backgroundPrimary, M.backgroundPrimary.opacity(0.85), M.backgroundPrimary.opacity(0)],
-                startPoint: .top, endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .top)
-            .allowsHitTesting(false)
-        }
-    }
-
-    private func stapleChip(_ s: Staple) -> some View {
-        let active = s.id == stapleID
-        return Button {
-            stapleID = s.id
-            pair = 0
-        } label: {
-            HStack(spacing: R.spacingSpace8) {
-                ArtView(art: s.thumb)
-                    .frame(width: 28, height: 28)
-                    .clipShape(Circle())
-                Text(s.title)
-                    .backstageText(.label2)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(active ? M.buttonPrimaryLabel : M.textPrimary)
-            .padding(.leading, R.spacingSpace8)
-            .padding(.trailing, R.spacingSpace16)
-            .frame(height: 44)
-            .background {
-                if active { Capsule().fill(M.buttonPrimaryBackground) }
-            }
-            .liquidGlass(in: Capsule(), interactive: true, clear: true)
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(s.title), \(s.pairs.count) pairings")
-        .accessibilityAddTraits(active ? [.isButton, .isSelected] : .isButton)
-    }
-
-    // MARK: Composer
-
-    /// Staple on top, a swipeable deck of pairings below, a "+" on the seam.
-    private func composer(height: CGFloat) -> some View {
-        let seam = R.spacingSpace4 / 2
-        let top = (height - seam) * 0.5
-        return VStack(spacing: seam) {
-            ZStack(alignment: .topLeading) {
-                ArtView(art: staple.thumb, parallax: 0.06)
-                Text(staple.title)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("\(count) ways to wear the \(staple.title.lowercased())")
                     .backstageText(.label1)
                     .foregroundStyle(M.textWhite)
-                    .shadow(color: M.textBlack.opacity(0.35), radius: 8)
-                    .padding(R.spacingSpace16)
-            }
-            .frame(height: top)
-            .clipped()
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(staple.title)
-
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: R.spacingSpace0) {
-                    ForEach(Array(staple.pairs.enumerated()), id: \.offset) { i, p in
-                        ArtView(art: p.art)
-                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                                content
-                                    .scaleEffect(1 + abs(phase.value) * 0.16)
-                                    .offset(x: phase.value * -50)
-                            }
-                            .containerRelativeFrame([.horizontal, .vertical])
-                            .clipped()
-                            .id(i)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("\(p.name) from \(p.brand)")
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $pair)
-            .scrollIndicators(.hidden)
-            .overlay(alignment: .bottomTrailing) {
-                Text("\(String(format: "%02d", index + 1)) / \(String(format: "%02d", staple.pairs.count))")
-                    .backstageText(.label3)
-                    .foregroundStyle(M.textPrimary)
+                    .lineLimit(1)
+                Text("\(String(format: "%02d", index + 1)) / \(String(format: "%02d", count))")
+                    .backstageText(.label2)
+                    .foregroundStyle(M.textWhite.opacity(0.7))
                     .monospacedDigit()
-                    .padding(.horizontal, R.spacingSpace12)
-                    .frame(height: 28)
-                    .liquidGlass(in: Capsule(), clear: true)
-                    .padding(R.spacingSpace12)
-                    .accessibilityHidden(true)
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: index)
             }
-        }
-        .frame(height: height)
-        .clipShape(EditorialCard.shape)
-        .overlay(alignment: .top) {
-            Image(systemName: "plus")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(M.iconInverse)
-                .frame(width: 40, height: 40)
-                .background(M.surfaceInverse, in: Circle())
-                .rotationEffect(.degrees(reduceMotion ? 0 : Double(index) * 90))
-                .elevation(.shadow100)
-                .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.7), value: index)
-                .offset(y: top + seam / 2 - 20)
-                .accessibilityHidden(true)
+            .shadow(color: .black.opacity(0.4), radius: 8)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, R.spacingSpace16)
+        .padding(.top, R.spacingSpace4)
+        .padding(.bottom, R.spacingSpace24)
+        .background {
+            LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+        }
+        .accessibilityElement(children: .contain)
     }
 
-    /// The pairing's name, shuffle and a link to the piece.
-    private var details: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace16) {
-            VStack(alignment: .leading, spacing: R.spacingSpace4) {
-                Text(pairing.brand)
+    /// A glass pill nudging the reader to swipe for the next look.
+    private var swipeHint: some View {
+        let up = startPage < count - 1
+        return HStack(spacing: R.spacingSpace8) {
+            Image(systemName: up ? "chevron.up" : "chevron.down")
+                .font(.system(size: 13, weight: .bold))
+                .offset(y: reduceMotion ? 0 : (bob ? (up ? -4 : 4) : 0))
+            Text(up ? "Swipe up for more looks" : "Swipe down for more looks")
+                .backstageText(.label2)
+        }
+        .foregroundStyle(M.textWhite)
+        .padding(.horizontal, R.spacingSpace16)
+        .frame(height: 36)
+        .liquidGlass(in: Capsule(), clear: true)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) { bob = true }
+        }
+        .allowsHitTesting(false)
+        .accessibilityLabel(up ? "Swipe up for more looks" : "Swipe down for more looks")
+    }
+
+    /// Segments down the right edge: one per look, the current one long and bright.
+    private var pageIndicator: some View {
+        VStack(spacing: R.spacingSpace4) {
+            ForEach(0..<count, id: \.self) { i in
+                Capsule()
+                    .fill(i == index ? M.iconWhite : M.iconWhite.opacity(0.35))
+                    .frame(width: 3, height: i == index ? 22 : 8)
+            }
+        }
+        .animation(.snappy, value: index)
+        .padding(.trailing, R.spacingSpace8)
+        .accessibilityHidden(true)
+    }
+
+    // MARK: A look
+
+    private func lookPage(_ i: Int, bottomInset: CGFloat) -> some View {
+        let piece = pairing(i)
+        return ZStack(alignment: .bottom) {
+            let zoom: Double = reduceMotion ? 0 : 0.08
+            ArtView(art: staple.looks[i])
+                .scrollTransition(.interactive, axis: .vertical) { content, phase in
+                    content.scaleEffect(1 + abs(phase.value) * zoom)
+                }
+            LinearGradient(colors: [.clear, .black.opacity(0.35), .black.opacity(0.85)],
+                           startPoint: .center, endPoint: .bottom)
+                .allowsHitTesting(false)
+
+            formula(i, piece: piece)
+                .padding(.horizontal, R.spacingSpace16)
+                .padding(.bottom, bottomInset + R.spacingSpace24)
+        }
+        .clipped()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Look \(i + 1) of \(count): \(staple.title) with \(piece.name)")
+    }
+
+    /// How the look is built: the two pieces, each opening its product.
+    private func formula(_ i: Int, piece: Pairing) -> some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Look \(String(format: "%02d", i + 1))")
                     .backstageText(.label2)
-                    .foregroundStyle(M.textSecondary)
-                Text("\(staple.title) + \(pairing.name)")
+                    .foregroundStyle(M.textWhite.opacity(0.7))
+                Text("\(staple.title) + \(piece.name)")
                     .backstageText(.title3)
-                    .foregroundStyle(M.textPrimary)
+                    .foregroundStyle(M.textWhite)
                     .lineLimit(2)
             }
-            .id(index)
-            .transition(.opacity)
-            .animation(.snappy, value: index)
-            .accessibilityElement(children: .combine)
 
+            VStack(spacing: R.spacingSpace8) {
+                pieceRow(art: staple.thumb, name: staple.title, detail: staple.subtitle,
+                         product: Product(name: staple.title, brand: "District edit", mark: "D",
+                                          category: "Staple", isNew: false, art: staple.thumb))
+                pieceRow(art: piece.art, name: piece.name, detail: piece.brand, product: product(for: piece))
+            }
+        }
+        .padding(R.spacingSpace16)
+        .liquidGlass(in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner20), clear: true)
+    }
+
+    private func pieceRow(art: Art, name: String, detail: String, product: Product) -> some View {
+        Button { opened = product } label: {
             HStack(spacing: R.spacingSpace12) {
-                Button(action: shuffle) {
-                    HStack(spacing: R.spacingSpace8) {
-                        Image(systemName: "shuffle").font(.system(size: 13, weight: .semibold))
-                        Text("Shuffle")
-                    }
-                    .backstageText(.label2)
-                    .foregroundStyle(M.textPrimary)
-                    .padding(.horizontal, R.spacingSpace16)
-                    .frame(height: 44)
-                    .liquidGlass(in: Capsule(), interactive: true, clear: true)
-                    .contentShape(Capsule())
+                ArtView(art: art)
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner8))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(name)
+                        .backstageText(.label1)
+                        .foregroundStyle(M.textWhite)
+                        .lineLimit(1)
+                    Text(detail)
+                        .backstageText(.body3)
+                        .foregroundStyle(M.textWhite.opacity(0.7))
+                        .lineLimit(1)
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint("Shows a random pairing")
-
                 Spacer(minLength: 0)
-
-                Button { opened = product(for: pairing) } label: {
-                    HStack(spacing: R.spacingSpace4) {
-                        Text("View piece")
-                        Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold))
-                    }
-                    .backstageText(.label2)
-                    .foregroundStyle(M.buttonPrimaryLabel)
-                    .padding(.horizontal, R.spacingSpace16)
-                    .frame(height: 44)
-                    .background(M.buttonPrimaryBackground, in: Capsule())
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(PressableStyle())
-                .accessibilityLabel("View \(pairing.name)")
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(M.iconWhite.opacity(0.8))
             }
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, R.spacingSpace16)
-    }
-
-    // MARK: Styled looks
-
-    private var styledRail: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace16) {
-            HStack(spacing: R.spacingSpace12) {
-                Text("Styled \(staple.looks.count) ways")
-                    .backstageText(.label1)
-                    .foregroundStyle(M.textPrimary)
-                    .fixedSize()
-                    .accessibilityAddTraits(.isHeader)
-                Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
-            }
-            .padding(.horizontal, R.spacingSpace16)
-
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: R.spacingSpace8) {
-                    ForEach(Array(staple.looks.enumerated()), id: \.offset) { i, art in
-                        Button {
-                            withAnimation(.smooth(duration: 0.3)) { viewing = i }
-                        } label: {
-                            ArtView(art: art, parallax: 0.06)
-                                .frame(width: 150, height: 210)
-                                .clipShape(EditorialCard.shape)
-                        }
-                        .buttonStyle(PressableStyle())
-                        .accessibilityLabel("\(staple.title), look \(i + 1) of \(staple.looks.count)")
-                        .accessibilityHint("Opens full screen")
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .carousel()
-        }
-        .id("styled-\(staple.id)")
-    }
-
-    // MARK: Actions
-
-    private func shuffle() {
-        let count = staple.pairs.count
-        guard count > 1 else { return }
-        var next = Int.random(in: 0..<count)
-        while next == index { next = Int.random(in: 0..<count) }
-        withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.85)) { pair = next }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel("\(name), \(detail)")
+        .accessibilityHint("Opens product")
     }
 
     /// The catalogue product when the pairing is one, otherwise a product built from the pairing.

@@ -10,6 +10,8 @@ private typealias R = BackstageTokens.Responsive
 struct StoryReaderView: View {
     private let stories = EditorialData.stories
     @State private var current: String?
+    /// Reading progress per story, present only once the reader has scrolled past the cover.
+    @State private var reading: [String: CGFloat] = [:]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -19,6 +21,7 @@ struct StoryReaderView: View {
 
     private var index: Int { stories.firstIndex { $0.id == current } ?? 0 }
     private var currentStory: Story { stories[index] }
+    private var readingProgress: CGFloat? { reading[currentStory.id] }
 
     var body: some View {
         GeometryReader { screen in
@@ -30,6 +33,8 @@ struct StoryReaderView: View {
                             ForEach(stories) { story in
                                 StoryPage(story: story, next: next(after: story), topInset: topInset) {
                                     go(to: next(after: story).id)
+                                } onReading: { state in
+                                    reading[story.id] = state.isReading ? state.progress : nil
                                 }
                                 .containerRelativeFrame([.horizontal, .vertical])
                                 .id(story.id)
@@ -44,8 +49,28 @@ struct StoryReaderView: View {
                 }
                 .ignoresSafeArea()
 
-                controls
+                // Soft fade behind the header while reading, so it stays legible over the text.
+                LinearGradient(colors: [M.backgroundPrimary, M.backgroundPrimary.opacity(0.85), M.backgroundPrimary.opacity(0)],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: topInset + 84)
+                    .ignoresSafeArea(edges: .top)
+                    .opacity(readingProgress == nil ? 0 : 1)
+                    .allowsHitTesting(false)
+
+                VStack(spacing: R.spacingSpace8) {
+                    controls
+                    progressLine
+                }
+
+                // Story position sits at the foot of the cover and steps aside once reading starts.
+                if readingProgress == nil {
+                    dotsPill
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .padding(.bottom, R.spacingSpace8)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
+            .animation(.easeInOut(duration: 0.25), value: readingProgress == nil)
         }
         .background(M.backgroundPrimary.ignoresSafeArea())
         .sensoryFeedback(.selection, trigger: current)
@@ -62,12 +87,70 @@ struct StoryReaderView: View {
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.45)) { current = id }
     }
 
-    /// Close, story position and share, floating over every page.
+    /// Close and share, floating over every page; the brand's name joins them while reading.
     private var controls: some View {
         GlassGroup(spacing: R.spacingSpace8) {
             HStack(spacing: R.spacingSpace8) {
                 GlassIconButton(systemName: "xmark", label: "Close story") { dismiss() }
                 Spacer(minLength: 0)
+                if readingProgress != nil {
+                    titlePill
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+                Spacer(minLength: 0)
+                ShareLink(item: "\(currentStory.title) — \(currentStory.brand), on District Editorial") {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(M.iconPrimary)
+                        .frame(width: 44, height: 44)
+                        .liquidGlass(in: Circle(), interactive: true, clear: true)
+                }
+                .accessibilityLabel("Share story")
+            }
+        }
+        .padding(.horizontal, R.spacingSpace16)
+        .padding(.top, R.spacingSpace4)
+    }
+
+    /// While reading: the brand's logo in a circle and its name.
+    private var titlePill: some View {
+        HStack(spacing: R.spacingSpace8) {
+            BrandMark(brand: currentStory.brand, mark: currentStory.mark, size: 30)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+            Text(currentStory.brand)
+                .backstageText(.title4)
+                .foregroundStyle(M.textPrimary)
+                .lineLimit(1)
+        }
+        .padding(.leading, R.spacingSpace8)
+        .padding(.trailing, R.spacingSpace16)
+        .frame(minHeight: 44)
+        .liquidGlass(in: Capsule(), clear: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// A progress bar under the header that fills as the story is read.
+    private var progressLine: some View {
+        GeometryReader { g in
+            ZStack(alignment: .leading) {
+                Capsule().fill(M.borderModerate)
+                Capsule().fill(M.textPrimary)
+                    .frame(width: g.size.width * min(1, max(0, readingProgress ?? 0)))
+            }
+        }
+        .frame(height: 3)
+        .padding(.horizontal, R.spacingSpace16)
+        .opacity(readingProgress == nil ? 0 : 1)
+        .animation(.linear(duration: 0.1), value: readingProgress)
+        .accessibilityElement()
+        .accessibilityLabel("Reading progress")
+        .accessibilityValue("\(Int(((readingProgress ?? 0) * 100).rounded())) percent")
+    }
+
+    /// Story position dots; tap one to jump to that story.
+    private var dotsPill: some View {
                 HStack(spacing: R.spacingSpace8) {
                     ForEach(stories.indices, id: \.self) { i in
                         Button { go(to: stories[i].id) } label: {
@@ -85,19 +168,28 @@ struct StoryReaderView: View {
                 .padding(.horizontal, R.spacingSpace16)
                 .liquidGlass(in: Capsule(), clear: true)
                 .animation(.snappy, value: index)
-                Spacer(minLength: 0)
-                ShareLink(item: "\(currentStory.title) — \(currentStory.brand), on District Editorial") {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(M.iconPrimary)
-                        .frame(width: 44, height: 44)
-                        .liquidGlass(in: Circle(), interactive: true, clear: true)
-                }
-                .accessibilityLabel("Share story")
+    }
+}
+
+// MARK: - Scroll tracking
+
+private struct StoryScrollTracker: ViewModifier {
+    let heroHeight: CGFloat
+    let onReading: (StoryPage.ReadingState) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            content.onScrollGeometryChange(for: StoryPage.ReadingState.self) { geo in
+                let offset = geo.contentOffset.y + geo.contentInsets.top
+                let readable = max(1, geo.contentSize.height - geo.containerSize.height)
+                return StoryPage.ReadingState(isReading: offset > heroHeight * 0.5,
+                                              progress: min(1, max(0, offset / readable)))
+            } action: { _, state in
+                onReading(state)
             }
+        } else {
+            content
         }
-        .padding(.horizontal, R.spacingSpace16)
-        .padding(.top, R.spacingSpace4)
     }
 }
 
@@ -108,6 +200,13 @@ struct StoryPage: View {
     let next: Story
     let topInset: CGFloat
     let onNext: () -> Void
+    /// Reports whether the reader is past the cover and how far through the story they are.
+    var onReading: (ReadingState) -> Void = { _ in }
+
+    struct ReadingState: Equatable {
+        let isReading: Bool
+        let progress: CGFloat
+    }
 
     @State private var scrollY: CGFloat = 0
     @State private var contentHeight: CGFloat = 1
@@ -156,9 +255,13 @@ struct StoryPage: View {
                 .scrollIndicators(.hidden)
                 .onPreferenceChange(PageOffsetKey.self) { scrollY = $0 }
                 .onPreferenceChange(PageHeightKey.self) { contentHeight = $0 }
+                // iOS 18+: read the offset straight from the scroll view, which reports every
+                // movement even inside the story pager (the preference above is the iOS 17 path).
+                .modifier(StoryScrollTracker(heroHeight: heroHeight, onReading: onReading))
 
-                readingMeter(progress: progress)
-                    .padding(.top, topInset + 56)
+            }
+            .onChange(of: ReadingState(isReading: scrollY < -heroHeight * 0.5, progress: progress)) { _, state in
+                onReading(state)
             }
         }
     }
@@ -222,29 +325,6 @@ struct StoryPage: View {
                     .scaleEffect(y > 0 ? 1 + y / height : 1, anchor: .bottom)
                     .offset(y: y > 0 ? 0 : -y * 0.35)
             }
-    }
-
-    // MARK: Reading meter
-
-    /// Calm, always-in-place progress: a hairline that fills, plus time left.
-    private func readingMeter(progress: CGFloat) -> some View {
-        let total = Double(article.readTime.prefix { $0.isNumber }) ?? 5
-        let left = max(0, Int((total * (1 - Double(progress))).rounded(.up)))
-        let reading = scrollY < -heroHeight * 0.5
-        return HStack(spacing: R.spacingSpace12) {
-            ReadingProgress(progress: progress)
-            Text(left == 0 ? "Done" : "\(left) min left")
-                .backstageText(.finePrint1)
-                .foregroundStyle(M.textSecondary)
-                .monospacedDigit()
-                .fixedSize()
-        }
-        .padding(.horizontal, R.spacingSpace16)
-        .opacity(reading ? 1 : 0)
-        .animation(.easeInOut(duration: 0.25), value: reading)
-        .allowsHitTesting(false)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(left == 0 ? "Finished reading" : "\(left) minutes left")
     }
 
     // MARK: Article

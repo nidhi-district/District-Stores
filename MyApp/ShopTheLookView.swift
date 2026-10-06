@@ -132,7 +132,7 @@ struct ShopPiecePage: View {
                     VStack(alignment: .leading, spacing: R.spacingSpace16) {
                         HStack(spacing: R.spacingSpace12) {
                             Text("Similar pieces")
-                                .backstageText(.label3)
+                                .backstageText(.label2)
                                 .foregroundStyle(M.textTertiary)
                                 .fixedSize()
                             Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
@@ -177,7 +177,7 @@ struct FeaturedSkuCard: View {
                         Image(systemName: "sparkle")
                             .font(.system(size: 10, weight: .semibold))
                         Text("As styled")
-                            .backstageText(.label3)
+                            .backstageText(.label2)
                     }
                     .foregroundStyle(M.textTertiary)
                     .padding(.bottom, R.spacingSpace8)
@@ -202,7 +202,7 @@ struct FeaturedSkuCard: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 10, weight: .bold))
                     }
-                    .backstageText(.label3)
+                    .backstageText(.label2)
                     .foregroundStyle(M.textInverse)
                     .padding(.horizontal, R.spacingSpace12)
                     .frame(height: 28)
