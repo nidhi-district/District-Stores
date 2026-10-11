@@ -10,13 +10,17 @@ struct StoresView: View {
     @State private var saved: Set<String> = []
     @State private var offerFilter: OfferFilter = .all
     @State private var sort: StoreSort = .distance
+    @State private var drop: HPDropPresentation?
+    @State private var bot: DiscoveryBotPresentation?
+    @Namespace private var dropZoom
 
     private let locations = ["Vatika City", "Golf Course Extension Road", "Cyberhub, DLF Phase 2", "Sector 29"]
 
     var body: some View {
         ScrollView(.vertical) {
             VStack(spacing: R.spacingSpace40) {
-                PromoBanner(image: "banner_one8_premiere", label: "one8 global premiere, 21st June 2026")
+                HPDropBanner { drop = HPDropPresentation() }
+                    .zoomSource(id: "hp-drop", in: dropZoom)
                 section("Shop by category") { categories }
                 section("What's new in stores") { whatsNew }
                 section("District benefits") { benefits }
@@ -30,6 +34,17 @@ struct StoresView: View {
         .ignoresSafeArea(edges: .top)
         .background(M.backgroundPrimary.ignoresSafeArea())
         .overlay(alignment: .top) { header }
+        .readerCover(item: $drop) { _ in
+            HPDropView().zoomTransition(id: "hp-drop", in: dropZoom)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            DiscoveryBotEntry { bot = DiscoveryBotPresentation() }
+                .zoomSource(id: "discovery-bot", in: dropZoom)
+                .padding(R.spacingSpace16)
+        }
+        .readerCover(item: $bot) { _ in
+            DiscoveryBotView().zoomTransition(id: "discovery-bot", in: dropZoom)
+        }
     }
 
     // MARK: Header

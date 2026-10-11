@@ -34,7 +34,22 @@ struct ContentView: View {
         }
     }
 
-    @State private var selection: Destination = .stores
+    @State private var selection: Destination = ContentView.launchTab
+
+    /// Debug builds accept `-startTab explore|search` so a simulator can open straight on a tab.
+    private static var launchTab: Destination {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-startTab"), i + 1 < args.count {
+            switch args[i + 1] {
+            case "explore": return .explore
+            case "search": return .search
+            default: break
+            }
+        }
+        #endif
+        return .stores
+    }
     @State private var compact = false
 
     var body: some View {
@@ -61,7 +76,7 @@ struct ContentView: View {
     @ViewBuilder
     private func screen(for destination: Destination) -> some View {
         switch destination {
-        case .explore: EditorialView()
+        case .explore: VogueEditView().environment(\.vogueStyle, true)
         case .search: SearchView()
         case .stores: StoresView()
         }

@@ -103,8 +103,17 @@ enum EditorialCard {
 struct SectionHeader: View {
     let number: Int
     let lines: [String]
+    @Environment(\.editorialStyle) private var style
 
     var body: some View {
+        if style == .newspaper {
+            NewspaperSectionHeader(number: number, title: lines.joined(separator: " "))
+        } else {
+            magazine
+        }
+    }
+
+    private var magazine: some View {
         VStack(alignment: .leading, spacing: R.spacingSpace12) {
             HStack(spacing: R.spacingSpace8) {
                 Text(String(format: "%02d", number))
@@ -125,6 +134,143 @@ struct SectionHeader: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, R.spacingSpace16)
     }
+}
+
+// MARK: - Newspaper style (District Vogue)
+
+/// Which typographic voice the shared sections speak in. District Stores uses the magazine voice;
+/// District Vogue's newspaper edition switches the section openers to newsprint headlines.
+enum EditorialStyle { case magazine, newspaper }
+
+private struct EditorialStyleKey: EnvironmentKey {
+    static let defaultValue = EditorialStyle.magazine
+}
+
+extension EnvironmentValues {
+    var editorialStyle: EditorialStyle {
+        get { self[EditorialStyleKey.self] }
+        set { self[EditorialStyleKey.self] = newValue }
+    }
+}
+
+/// Newsprint type: Playfair Display for headlines and the nameplate, a condensed face (Anton) for
+/// folios, datelines and kickers. (Running text uses Source Serif via the Vogue text styles.)
+enum NewsType {
+    static func serif(_ size: CGFloat, _ weight: Weight = .bold) -> Font {
+        .custom(weight.face, size: size, relativeTo: .title)
+    }
+
+    static func condensed(_ size: CGFloat) -> Font {
+        .custom("Anton-Regular", size: size, relativeTo: .caption)
+    }
+
+    enum Weight {
+        case regular, semibold, bold, black, italic
+
+        var face: String {
+            switch self {
+            case .regular: "PlayfairDisplay-Regular"
+            case .semibold: "PlayfairDisplayRoman-SemiBold"
+            case .bold: "PlayfairDisplayRoman-Bold"
+            case .black: "PlayfairDisplayRoman-Black"
+            case .italic: "PlayfairDisplay-Italic"
+            }
+        }
+    }
+}
+
+private struct NewspaperPageKey: EnvironmentKey {
+    static let defaultValue: Int? = nil
+}
+
+extension EnvironmentValues {
+    /// The printed page a section sits on in the newspaper edition, for its folio.
+    var newspaperPage: Int? {
+        get { self[NewspaperPageKey.self] }
+        set { self[NewspaperPageKey.self] = newValue }
+    }
+}
+
+/// A section opener set like a newspaper page: folio and section kicker between rules, the
+/// headline in Playfair, an italic deck (standfirst) under it, and the desk's byline.
+struct NewspaperSectionHeader: View {
+    let number: Int
+    let title: String
+    @Environment(\.newspaperPage) private var printedPage
+
+    private var headline: String { title.prefix(1).uppercased() + title.dropFirst() }
+    private var copy: NewsCopy.Entry? { NewsCopy.entries[headline] }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+            HStack(spacing: R.spacingSpace8) {
+                Text("PAGE \(String(format: "%02d", printedPage ?? number))")
+                Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
+                if let kicker = copy?.kicker { Text(kicker) }
+            }
+            .font(NewsType.condensed(12))
+            .tracking(1.6)
+            .foregroundStyle(M.textSecondary)
+            .accessibilityHidden(true)
+
+            Text(headline)
+                .font(NewsType.serif(34, .bold))
+                .foregroundStyle(M.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+
+            if let deck = copy?.deck {
+                Text(deck)
+                    .font(.custom("SourceSerif4Italic-Italic", size: 17, relativeTo: .body))
+                    .foregroundStyle(M.textSecondary)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: R.spacingSpace8) {
+                    Rectangle().fill(M.textSecondary).frame(width: 18, height: R.stroke1Px)
+                    Text("WORDS — THE DISTRICT STYLE DESK")
+                        .font(NewsType.condensed(10.5))
+                        .tracking(1.4)
+                        .foregroundStyle(M.textTertiary)
+                }
+                .accessibilityHidden(true)
+            }
+
+            Rectangle().fill(M.borderModerate).frame(height: R.stroke1Px)
+                .padding(.top, R.spacingSpace4)
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, R.spacingSpace16)
+    }
+}
+
+/// Newspaper copy for each page: a section kicker and the deck under the headline. It describes
+/// what is on the page and makes no claims about brands.
+enum NewsCopy {
+    struct Entry {
+        let kicker: String
+        let deck: String
+    }
+
+    static let entries: [String: Entry] = [
+        "Homegrown & unfiltered": Entry(kicker: "CULTURE",
+            deck: "Five homegrown labels, the hands behind them, and the shops in your district where you can see the work up close."),
+        "Hot off the rack": Entry(kicker: "NEW IN",
+            deck: "This week leans warm: golds, cocoa browns and washed denim that already looks lived in. Every piece is on a shelf near you."),
+        "What goes well with?": Entry(kicker: "STYLE",
+            deck: "One staple, many lives. The quiet basics that let the loud pieces work, styled every way we could think of."),
+        "The quote": Entry(kicker: "OPINION",
+            deck: "Overheard at the style desk, and true more often than not."),
+        "Cop these looks": Entry(kicker: "THE EDIT",
+            deck: "Our favourite looks of the week, taken apart piece by piece so you can find each one in a store nearby."),
+        "Fits for every plan": Entry(kicker: "OCCASIONS",
+            deck: "Plans set the dress code. A wardrobe for everything on your calendar, from Diwali parties to Sunday brunch."),
+        "Pick your palette": Entry(kicker: "COLOUR",
+            deck: "Colour is the fastest way to change a mood. Choose a palette and see the looks that wear it best."),
+        "In this issue": Entry(kicker: "CONTENTS",
+            deck: "Everything in this edition, page by page."),
+    ]
 }
 
 /// Hairline rule with a centred ornament, used to frame interludes.

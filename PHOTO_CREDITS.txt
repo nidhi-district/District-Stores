@@ -101,3 +101,8 @@ Brand logos (Assets.xcassets/Logos) — trademarks of their owners, used to iden
   Nicobar, Doodlage, Nappa Dori, Bonkers Corner, Gully Labs, Project Qaafi: the brands' own website logos
   Snitch, The Souled Store: App Store app icons
   Cord, Blu: no usable logo found; text mark shown
+
+HP drop: Hardik Pandya photos from Wikimedia Commons (attribution required; confirm usage rights with legal before release).
+hp_wiki_worldcup	"Hardik Pandya in PMO New Delhi", Prime Minister's Office (India), GODL-India	https://commons.wikimedia.org/wiki/File:Hardik_Pandya_in_PMO_New_Delhi.jpg
+hp_wiki_brothers	"Krunal Pandya and Hardik Pandya", Bollywood Hungama, CC BY 3.0	https://commons.wikimedia.org/wiki/File:Krunal_Pandya_and_Hardik_Pandya.jpg
+hp_wiki_street	"Hardik Pandya 2020", Bollywood Hungama, CC BY 3.0	https://commons.wikimedia.org/wiki/File:Hardik_Pandya_2020.jpg

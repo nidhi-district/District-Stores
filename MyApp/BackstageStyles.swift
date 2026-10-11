@@ -11,6 +11,8 @@ enum BackstageFonts {
         "BeVietnamPro-Regular", "BeVietnamPro-Medium", "BeVietnamPro-SemiBold", "BeVietnamPro-Bold", "BeVietnamPro-ExtraBold",
         // Magazine accent faces: the cover-style section opener and the pull quote.
         "Anton-Regular", "DMSerifDisplay-Italic", "PlayfairDisplay", "PlayfairDisplay-Italic",
+        // The Vogue-styled Explore tab's newsprint faces.
+        "BodoniModa", "BodoniModa-Italic", "Inter", "SourceSerif4", "SourceSerif4-Italic", "Figtree",
     ]
 
     /// Registers the bundled faces for this process. Call once at launch.
@@ -19,6 +21,21 @@ enum BackstageFonts {
             guard let url = Bundle.main.url(forResource: face, withExtension: "ttf") else { continue }
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
+    }
+}
+
+// MARK: - Vogue styling
+
+private struct VogueStyleKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Set on the Explore tab: text styles and display headlines switch to the Vogue newsprint
+    /// faces for that tab and everything it presents, while the other tabs keep Be Vietnam Pro.
+    var vogueStyle: Bool {
+        get { self[VogueStyleKey.self] }
+        set { self[VogueStyleKey.self] = newValue }
     }
 }
 
@@ -45,8 +62,19 @@ enum BackstageTextStyle {
     // Title 3, Title 4, Label 2, Label 3, Body 3 and Button 3 follow the Figma "Homepage and
     // Search" file's text variables; the rest keep the Backstage reference values.
 
-    var fontName: String {
-        switch self {
+    func fontName(vogue: Bool) -> String {
+        if vogue {
+            // The Vogue newsprint voice: Playfair Display for titles, Source Serif for running
+            // and label text, a condensed face for small caps.
+            return switch self {
+            case .heading3, .title1, .title2: "PlayfairDisplayRoman-Bold"
+            case .title3, .title4, .caption: "PlayfairDisplayRoman-SemiBold"
+            case .label1, .label2, .label3, .button3: "SourceSerif4Roman-SemiBold"
+            case .body1, .body2, .body3, .finePrint1: "SourceSerif4Roman-Regular"
+            case .specialTitle, .finePrint2: "Anton-Regular"
+            }
+        }
+        return switch self {
         case .heading3, .title1: "BeVietnamPro-ExtraBold"
         case .title2, .specialTitle: "BeVietnamPro-Bold"
         case .title3, .title4, .label1, .button3: "BeVietnamPro-SemiBold"
@@ -112,6 +140,7 @@ enum BackstageTextStyle {
 private struct BackstageTextModifier: ViewModifier {
     let style: BackstageTextStyle
     @ScaledMetric private var scale: CGFloat
+    @Environment(\.vogueStyle) private var vogue
 
     /// Be Vietnam Pro's natural line height (ascent + descent) in ems.
     private static let naturalLineHeight: CGFloat = 1.265
@@ -124,7 +153,7 @@ private struct BackstageTextModifier: ViewModifier {
     func body(content: Content) -> some View {
         let size = style.size * scale
         content
-            .font(.custom(style.fontName, fixedSize: size))
+            .font(.custom(style.fontName(vogue: vogue), fixedSize: size))
             .tracking(size * style.tracking)
             .lineSpacing(max(0, (style.lineHeight - style.size * Self.naturalLineHeight) * scale))
             .textCase(style == .specialTitle ? .uppercase : nil)
@@ -146,13 +175,21 @@ extension View {
 private struct EditorialDisplayModifier: ViewModifier {
     let size: CGFloat
     @ScaledMetric(relativeTo: .largeTitle) private var scale: CGFloat = 1
+    @Environment(\.vogueStyle) private var vogue
 
     func body(content: Content) -> some View {
         let s = size * scale
-        content
-            .font(.custom("BeVietnamPro-SemiBold", fixedSize: s))
-            .tracking(-0.045 * s)
-            .textCase(.lowercase)
+        if vogue {
+            // Newsprint headlines: Playfair Display in sentence case.
+            content
+                .font(.custom("PlayfairDisplayRoman-Bold", fixedSize: s))
+                .tracking(-0.01 * s)
+        } else {
+            content
+                .font(.custom("BeVietnamPro-SemiBold", fixedSize: s))
+                .tracking(-0.045 * s)
+                .textCase(.lowercase)
+        }
     }
 }
 

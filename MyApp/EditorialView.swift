@@ -76,7 +76,8 @@ struct EditorialView: View {
 
 }
 
-private struct ExploreScrollTracker: ViewModifier {
+/// Reports the page offset (0 at rest, negative scrolling down); shared by both Explore designs.
+struct ExploreScrollTracker: ViewModifier {
     let onScroll: (CGFloat) -> Void
 
     func body(content: Content) -> some View {
