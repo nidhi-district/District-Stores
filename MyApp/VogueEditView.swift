@@ -40,7 +40,7 @@ struct VogueEditView: View {
                     VoguePlansSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(5, into: $pageTops)
                     VogueBentoSection().stackedPage(pinTop: pinTop, backdrop: .wash(Color(hex: 0xBCAEFE).opacity(0.08))).page(6, into: $pageTops)
                     VoguePaletteSection()
-                        .stackedPage(pinTop: pinTop, backdrop: .plain)
+                        .stackedPage(pinTop: pinTop, backdrop: .bloom(EditorialData.palettes.compactMap { $0.hexes.first }))
                         .page(7, into: $pageTops)
                     // The contents page closes the tab; it fills the screen so the page ends on it.
                     VogueIndexSection { n in
@@ -48,6 +48,7 @@ struct VogueEditView: View {
                     }
                     .padding(.bottom, 96)
                     .stackedPage(pinTop: pinTop, minHeight: pageHeight, backdrop: nil)
+                    .background(alignment: .bottom) { EditBottomGlow() }
                     .page(8, into: $pageTops)
                 }
                 .coordinateSpace(name: EditPages.space)
@@ -532,8 +533,10 @@ private extension View {
 enum PageBackdrop {
     /// A colour wash from the top edge, fading out down the page.
     case wash(Color)
-    /// Bare paper with a hairline along the top (the palettes).
+    /// Bare paper with a hairline along the top.
     case plain
+    /// A hairline along the top over a soft bloom of the given swatches (the palettes).
+    case bloom([UInt32])
 }
 
 private struct PageBackdropView: View {
@@ -547,6 +550,10 @@ private struct PageBackdropView: View {
                 wash(color)
             case .plain:
                 Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
+            case let .bloom(hexes):
+                bloom(hexes)
+                wash(.white.opacity(0.05))
+                Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
             }
         }
         .clipped()
@@ -556,6 +563,45 @@ private struct PageBackdropView: View {
 
     private func wash(_ color: Color) -> some View {
         LinearGradient(colors: [color, color.opacity(0)], startPoint: .top, endPoint: .bottom)
+    }
+
+    /// The swatches as large blurred discs strung across the page, like light through dyed fabric.
+    private func bloom(_ hexes: [UInt32]) -> some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            let step = size.width / CGFloat(max(hexes.count, 1))
+            ZStack(alignment: .topLeading) {
+                ForEach(hexes.indices, id: \.self) { i in
+                    Circle()
+                        .fill(Color(hex: hexes[i]))
+                        .frame(width: 240, height: 240)
+                        .position(x: step * (CGFloat(i) + 0.5),
+                                  y: size.height * (i.isMultiple(of: 2) ? 0.42 : 0.62))
+                }
+            }
+            .blur(radius: 80)
+            .opacity(0.22)
+        }
+    }
+}
+
+/// A soft violet-to-magenta glow rising from the foot of the tab, closing the edit.
+private struct EditBottomGlow: View {
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            RadialGradient(colors: [Color(hex: 0xBCAEFE).opacity(0.22), Color(hex: 0xBCAEFE).opacity(0)],
+                           center: .bottom, startRadius: 0, endRadius: 380)
+            Ellipse()
+                .fill(Color(hex: 0xF9B3EB).opacity(0.28))
+                .frame(width: 320, height: 160)
+                .blur(radius: 60)
+                .offset(y: 60)
+        }
+        .frame(height: 420)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
