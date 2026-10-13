@@ -18,6 +18,8 @@ struct VogueEditView: View {
     @State private var screenHeight: CGFloat = 0
     /// Each page's top edge in the column, for the scroll's soft snap.
     @State private var pageTops: [Int: CGFloat] = [:]
+    /// The contents page's top edge on screen, so the closing glow can rise as it arrives.
+    @State private var indexTop: CGFloat = .infinity
     @Environment(\.tabBarCompactHandler) private var setTabBarCompact
 
     private let locations = ["Golf Course Extension Road", "Vatika City", "Cyberhub, DLF Phase 2", "Sector 29"]
@@ -48,7 +50,7 @@ struct VogueEditView: View {
                     }
                     .padding(.bottom, 96)
                     .stackedPage(pinTop: pinTop, minHeight: pageHeight, backdrop: nil)
-                    .background(alignment: .bottom) { EditBottomGlow() }
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { indexTop = $0 }
                     .page(8, into: $pageTops)
                 }
                 .coordinateSpace(name: EditPages.space)
@@ -82,6 +84,8 @@ struct VogueEditView: View {
             }
 
             BottomBarFade()
+            // Above the fade so it reaches the screen's foot, behind the floating tab bar.
+            EditBottomGlow().opacity(endReveal)
         }
         .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { screenHeight = $0 }
         .environment(\.editorialStyle, .newspaper)
@@ -89,6 +93,12 @@ struct VogueEditView: View {
 
     /// The screen below the header.
     private var pageHeight: CGFloat { max(0, screenHeight - pinTop) }
+
+    /// 0 until the contents page comes up, 1 once it fills the screen.
+    private var endReveal: Double {
+        guard screenHeight > 0, pageHeight > 0, indexTop.isFinite else { return 0 }
+        return Double(min(1, max(0, (screenHeight - indexTop) / pageHeight)))
+    }
 
     /// `y` is the content's top edge: 0 at rest, negative as the page scrolls down.
     private func scrolled(to y: CGFloat) {
@@ -552,7 +562,7 @@ private struct PageBackdropView: View {
                 Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
             case let .bloom(hexes):
                 bloom(hexes)
-                wash(.white.opacity(0.05))
+                wash(.white.opacity(0.03))
                 Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
             }
         }
@@ -579,27 +589,27 @@ private struct PageBackdropView: View {
                                   y: size.height * (i.isMultiple(of: 2) ? 0.42 : 0.62))
                 }
             }
-            .blur(radius: 80)
-            .opacity(0.22)
+            .blur(radius: 100)
+            .opacity(0.09)
         }
     }
 }
 
-/// A soft violet-to-magenta glow rising from the foot of the tab, closing the edit.
+/// A faint grey glow rising from the screen's foot, under the tab bar, closing the edit.
 private struct EditBottomGlow: View {
     var body: some View {
         ZStack(alignment: .bottom) {
-            RadialGradient(colors: [Color(hex: 0xBCAEFE).opacity(0.22), Color(hex: 0xBCAEFE).opacity(0)],
-                           center: .bottom, startRadius: 0, endRadius: 380)
+            RadialGradient(colors: [.white.opacity(0.07), .white.opacity(0)],
+                           center: .bottom, startRadius: 0, endRadius: 420)
             Ellipse()
-                .fill(Color(hex: 0xF9B3EB).opacity(0.28))
-                .frame(width: 320, height: 160)
-                .blur(radius: 60)
-                .offset(y: 60)
+                .fill(.white.opacity(0.06))
+                .frame(width: 360, height: 180)
+                .blur(radius: 70)
+                .offset(y: 70)
         }
-        .frame(height: 420)
-        .frame(maxWidth: .infinity)
-        .clipped()
+        .frame(height: 380)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .ignoresSafeArea(edges: .bottom)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
