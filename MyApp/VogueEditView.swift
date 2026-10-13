@@ -1370,14 +1370,29 @@ private struct VogueLookCard: View {
 
     var body: some View {
         VoguePhotoCard(art: look.art, width: 268, height: 420, scrimReach: 0.22) {
-            // Wraps to a second line rather than truncating a long outfit name.
-            Text(look.title)
-                .font(EditType.display(18, relativeTo: .headline))
-                .tracking(-0.18)
-                .foregroundStyle(M.textPrimary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: R.spacingSpace8) {
+                // Wraps to a second line rather than truncating a long outfit name.
+                Text(look.title)
+                    .font(EditType.display(18, relativeTo: .headline))
+                    .tracking(-0.18)
+                    .foregroundStyle(M.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                // Opens the look's shopping sheet on its first piece; a plain underlined link, no chevron.
+                Button { shopping = Shopping(id: 0) } label: {
+                    Text("Shop the look")
+                        .font(EditType.text(13, .medium, relativeTo: .subheadline))
+                        .foregroundStyle(M.textWhite)
+                        .padding(.bottom, 2)
+                        .overlay(alignment: .bottom) {
+                            Rectangle().fill(M.textWhite).frame(height: R.stroke1Px)
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityHint("Opens every piece in this look")
+            }
             .padding(.horizontal, R.spacingSpace16)
             .padding(.bottom, R.spacingSpace20)
         }
