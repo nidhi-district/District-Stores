@@ -491,6 +491,8 @@ struct Marquee<Content: View>: View {
 struct HotspotPin: View {
     let spot: Hotspot
     let isActive: Bool
+    /// A plain white dot instead of the glass tag.
+    var dot = false
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -507,13 +509,23 @@ struct HotspotPin: View {
                             expanded ? .easeOut(duration: 1.6) : .linear(duration: 0)
                         }
                 }
-                Color.clear
-                    .frame(width: 28, height: 28)
-                    .liquidGlass(in: Circle(), interactive: true)
-                // A shopping tag: the pin opens the piece and similar options.
-                Image(systemName: "tag.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(M.iconPrimary)
+                if dot {
+                    Circle()
+                        .fill(M.iconWhite)
+                        .frame(width: 12, height: 12)
+                        .overlay { Circle().strokeBorder(.black.opacity(0.15), lineWidth: R.stroke1Px) }
+                        .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+                        .padding(8)
+                        .background(Circle().fill(M.iconWhite.opacity(0.25)))
+                } else {
+                    Color.clear
+                        .frame(width: 28, height: 28)
+                        .liquidGlass(in: Circle(), interactive: true)
+                    // A shopping tag: the pin opens the piece and similar options.
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(M.iconPrimary)
+                }
             }
             .frame(width: 44, height: 44)
             .contentShape(Circle())
@@ -539,6 +551,53 @@ enum DominantColor {
         let colour = art.image.flatMap(extract) ?? art.colors.dropFirst().first ?? art.colors[0]
         cache[key] = colour
         return colour
+    }
+
+    private static var footCache: [String: Color] = [:]
+    private static var headCache: [String: Color] = [:]
+
+    /// The photo's own colour across its top third, deepened the same way, for washes that
+    /// carry text at the top of a card.
+    static func head(of art: Art) -> Color {
+        let key = art.image ?? "seed-\(art.seed)"
+        if let hit = headCache[key] { return hit }
+        let colour = art.image.flatMap { averageRegion($0, top: true) } ?? art.colors[0]
+        headCache[key] = colour
+        return colour
+    }
+
+    /// The photo's own colour where a caption sits: the average of its lower third, deepened a
+    /// little so white text stays legible on a scrim washed with it.
+    static func foot(of art: Art) -> Color {
+        let key = art.image ?? "seed-\(art.seed)"
+        if let hit = footCache[key] { return hit }
+        let colour = art.image.flatMap { averageRegion($0, top: false) } ?? art.colors.last ?? art.colors[0]
+        footCache[key] = colour
+        return colour
+    }
+
+    /// Average colour of the image's top or bottom third.
+    private static func averageRegion(_ name: String, top: Bool) -> Color? {
+        guard let image = cgImage(named: name) else { return nil }
+        let side = 24
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        guard let ctx = CGContext(
+            data: &pixels, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        ctx.interpolationQuality = .medium
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        // Rows run top to bottom in the buffer.
+        var r = 0.0, g = 0.0, b = 0.0, n = 0.0
+        for row in (top ? 0..<(side / 3) : (side * 2 / 3)..<side) {
+            for col in 0..<side {
+                let i = (row * side + col) * 4
+                r += Double(pixels[i]); g += Double(pixels[i + 1]); b += Double(pixels[i + 2]); n += 1
+            }
+        }
+        let (h, s, v) = hsv(r / n / 255, g / n / 255, b / n / 255)
+        return Color(hue: h, saturation: min(0.9, s * 1.15), brightness: min(0.62, max(0.22, v * 0.85)))
     }
 
     private static func extract(_ name: String) -> Color? {

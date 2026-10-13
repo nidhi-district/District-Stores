@@ -10,11 +10,19 @@ struct StoresView: View {
     @State private var saved: Set<String> = []
     @State private var offerFilter: OfferFilter = .all
     @State private var sort: StoreSort = .distance
-    @State private var drop: HPDropPresentation?
+    @State private var drop: HPDropPresentation? = StoresView.launchDrop
     @State private var bot: DiscoveryBotPresentation?
     @Namespace private var dropZoom
 
     private let locations = ["Vatika City", "Golf Course Extension Road", "Cyberhub, DLF Phase 2", "Sector 29"]
+
+    /// Debug builds accept `-openDrop` so a simulator can open straight on the HP drop page.
+    private static var launchDrop: HPDropPresentation? {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-openDrop") { return HPDropPresentation() }
+        #endif
+        return nil
+    }
 
     var body: some View {
         ScrollView(.vertical) {

@@ -584,14 +584,15 @@ enum EditorialData {
     ]
 
     static let palettes: [Palette] = [
-        Palette(id: "butter-denim", name: "Butter & Denim", hexes: [0x86B6DE, 0x5C3A1E, 0xF6E27A],
-                shades: ["Denim", "Cocoa", "Butter"]),
-        Palette(id: "slate-noir", name: "Slate Noir", hexes: [0x7C8794, 0x5B4E45, 0x2B211C, 0x5A5632, 0xC8A27A],
-                shades: ["Slate", "Taupe", "Espresso", "Moss", "Camel"]),
-        Palette(id: "midnight-olive", name: "Midnight Olive", hexes: [0x2F3E4E, 0x2A1E18, 0x6E625A, 0xA9A47E],
-                shades: ["Midnight", "Coffee", "Stone", "Olive"]),
-        Palette(id: "rose-clay", name: "Rose Clay", hexes: [0xE3B3C5, 0x5E2635, 0x3B241D, 0xE3D8C6],
-                shades: ["Blush", "Wine", "Cocoa", "Cream"], lookCount: 4),
+        // Shades sampled from each palette's flat-lay (vibe_palette_<id>), lead garment first.
+        Palette(id: "butter-denim", name: "Butter & Denim", hexes: [0xF1E6A2, 0x9DB3CC, 0xA17A57],
+                shades: ["Butter", "Denim", "Straw"]),
+        Palette(id: "slate-noir", name: "Rust & Indigo", hexes: [0x974322, 0x1E2B45, 0x9C8467],
+                shades: ["Rust", "Indigo", "Suede"]),
+        Palette(id: "midnight-olive", name: "Olive & Cocoa", hexes: [0x7F8B4E, 0xEDE3D6, 0x443025, 0x5A1F22],
+                shades: ["Olive", "Cream", "Cocoa", "Oxblood"]),
+        Palette(id: "rose-clay", name: "Rose Clay", hexes: [0x8C5D5E, 0x7A4A4E, 0xEEE8DC, 0x443025],
+                shades: ["Mauve", "Rosewood", "Ivory", "Cocoa"], lookCount: 4),
         Palette(id: "sage-linen", name: "Sage Linen", hexes: [0x9FAF90, 0xE8E2D0, 0x4A5340],
                 shades: ["Sage", "Linen", "Fern"]),
     ]

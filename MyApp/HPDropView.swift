@@ -24,92 +24,56 @@ enum HPDropPalette {
 
     static let foil = LinearGradient(colors: [silverLight, silver, silverDeep], startPoint: .topLeading, endPoint: .bottomTrailing)
     static let foilVertical = LinearGradient(colors: [silverLight, silver, silverDeep], startPoint: .top, endPoint: .bottom)
-}
 
-/// Anton, the campaign's condensed display face (numbers, the HP33 wordmark).
-private func anton(_ size: CGFloat) -> Font { .custom("Anton-Regular", fixedSize: size) }
+    // Drop page, from the campaign Figma.
+    static let haloCore = Color(rgba: 0x737373FF)
+    static let haloEdge = Color(rgba: 0xD9D9D9FF)
+    static let cherryHalo = [Color(rgba: 0x5A2129FF), Color(rgba: 0x96676EFF)]
+    static let goldHalo = [Color(rgba: 0xEFCD72FF), Color(rgba: 0x513924FF)]
+    static let band = Color(rgba: 0x8A8A8AFF)
+    static let bandEdge = Color(rgba: 0x99999900)
+    static let sparkWhite = Color(rgba: 0xF3F3F3FF)
+    static let champagneGlow = Color(rgba: 0xF8E99633)
+    static let glowFloor = Color(rgba: 0xB3B3B3FF)
+    static let cardEdge = Color(rgba: 0xF6F6F929)
+    static let captionText = Color(rgba: 0xF3F3F7A3)
+    static let benefitGlow = Color(rgba: 0x353535FF)
+    static let stepPanel = Color(rgba: 0x151517FF)
+    static let stepCard = Color(rgba: 0x151515FF)
+    static let skuCard = Color(rgba: 0x171718FF)
+    static let reserveFloor = Color(rgba: 0x070706FF)
+    static let buttonInk = Color(rgba: 0x0F0F0FFF)
+
+    /// Eyebrows and rule labels: white into grey.
+    static let sheen = LinearGradient(colors: [.white, Color(rgba: 0x999999FF)], startPoint: .leading, endPoint: .trailing)
+    /// Benefit titles: off-white into a warm stone.
+    static let warmSheen = LinearGradient(colors: [Color(rgba: 0xF7F7F7FF), Color(rgba: 0xC0B2A7FF)], startPoint: .topLeading, endPoint: .bottomTrailing)
+    /// The "Reserve now" brushed metal.
+    static let metal = LinearGradient(stops: [.init(color: Color(rgba: 0x717171FF), location: 0.01), .init(color: Color(rgba: 0x9E9898FF), location: 0.1),
+                                              .init(color: Color(rgba: 0xD6D6D6FF), location: 0.27), .init(color: Color(rgba: 0xD6D6D6FF), location: 0.83),
+                                              .init(color: Color(rgba: 0x9E9E9EFF), location: 0.98), .init(color: Color(rgba: 0x9A9A9AFF), location: 1)],
+                                      startPoint: .leading, endPoint: .trailing)
+}
 
 // MARK: - Stores banner
 
-/// Stores-tab hero banner for the drop, drawn natively at the one8 banner's proportions so the copy
-/// stays sharp and "Know more" is a real button.
+/// Stores-tab hero banner for the drop: the campaign's finished artwork ("DM_Banner") as one image.
+/// The whole banner opens the drop.
 struct HPDropBanner: View {
     var action: () -> Void
-    /// Same proportions as the campaign artwork slot (804 × 782).
-    private let aspect: CGFloat = 804.0 / 782.0
 
     var body: some View {
-        Color.clear
-            .aspectRatio(aspect, contentMode: .fit)
+        Image("hp_banner")
+            .resizable()
+            .scaledToFit()
             .frame(maxWidth: .infinity)
-            .overlay { GeometryReader { artwork(in: $0.size) } }
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: R.cornerRadiusCorner24, bottomTrailingRadius: R.cornerRadiusCorner24))
             .contentShape(Rectangle())
             .onTapGesture(perform: action)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("SG × Hardik Pandya, 10 years. Hardik's birthday drop, only on District, \(HPDrop.dropDateShort)")
+            .accessibilityLabel("SG × Hardik Pandya: Born to be 33. Exclusive on District. Reveals 13 October")
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Opens the drop")
-    }
-
-    private func artwork(in size: CGSize) -> some View {
-        let w = size.width, h = size.height
-        return ZStack {
-            LinearGradient(colors: [P.ink, P.ink, P.graphite], startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [P.silver.opacity(0.42), P.silver.opacity(0.08), .clear],
-                           center: UnitPoint(x: 0.7, y: 0.6), startRadius: 0, endRadius: w * 0.62)
-
-            Image("hp_hardik")
-                .resizable().scaledToFill()
-                .frame(width: w * 0.7, height: h * 1.02, alignment: .top)
-                .clipped()
-                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.45)],
-                                     startPoint: .leading, endPoint: .trailing))
-                .position(x: w * 0.65, y: h * 0.12 + h * 0.51)
-
-            // Ink over the status bar and header, and a warm floor under the pill.
-            LinearGradient(stops: [.init(color: P.ink, location: 0), .init(color: P.ink.opacity(0), location: 0.3),
-                                   .init(color: P.ink.opacity(0), location: 0.72), .init(color: P.ink.opacity(0.85), location: 1)],
-                           startPoint: .top, endPoint: .bottom)
-
-            VStack(alignment: .leading, spacing: R.spacingSpace4) {
-                HPLockup(height: 36)
-                Text("10 YEARS")
-                    .font(anton(58))
-                    .foregroundStyle(P.foil)
-                    .padding(.top, R.spacingSpace8)
-                Text("HARDIK'S BIRTHDAY DROP")
-                    .font(.custom("BeVietnamPro-SemiBold", fixedSize: 11))
-                    .tracking(2.2)
-                    .foregroundStyle(M.textWhite)
-                HStack(spacing: R.spacingSpace8) {
-                    DistrictExclusiveBadge(height: 24)
-                    Text(HPDrop.dropDateChip)
-                        .backstageText(.label3)
-                        .foregroundStyle(P.silverLight)
-                        .padding(.horizontal, R.spacingSpace8)
-                        .frame(height: 24)
-                        .overlay(Capsule().strokeBorder(P.silver.opacity(0.5), lineWidth: R.stroke1Px))
-                }
-                .padding(.top, R.spacingSpace8)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, R.spacingSpace20)
-            .padding(.top, h * 0.36)
-
-            // Sized like the one8 banner's pill (about 26% of the width, 7% of the height); the whole
-            // banner is the tap target.
-            HStack(spacing: 2) {
-                Text("Know more")
-                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
-            }
-            .font(.custom("BeVietnamPro-SemiBold", fixedSize: 12.5))
-            .foregroundStyle(M.textBlack)
-            .padding(.horizontal, R.spacingSpace16)
-            .frame(height: h * 0.07)
-            .background(M.iconWhite, in: Capsule())
-            .position(x: w * 0.5, y: h * 0.913)
-        }
     }
 }
 
@@ -151,32 +115,36 @@ struct DistrictExclusiveBadge: View {
 
 // MARK: - Drop page
 
-/// The SG × Hardik Pandya birthday drop. Sections follow the campaign brief: header image, title,
-/// subtitle, exclusive line, date and location, the Hardik rail, District benefits, how to shop,
-/// the collection rail, help, and a closing logo moment.
+/// The SG × Hardik Pandya birthday drop, built from the campaign Figma ("Other cities", node
+/// 16364:272): the portrait header, title, exclusive band and lockup, date and venue, Hardik's edit,
+/// District benefits, how to shop, the collection carousel, help, and a closing logo moment.
 struct HPDropView: View {
     @State private var notified = false
     @State private var scrollY: CGFloat = 0
     @State private var selected: HPProduct?
+    @State private var focused: HPProduct.ID?
+    @State private var railWidth: CGFloat = 402
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
-                VStack(spacing: R.spacingSpace56) {
-                    VStack(spacing: R.spacingSpace24) {
-                        header
+                VStack(spacing: R.spacingSpace0) {
+                    header
+                    VStack(spacing: R.spacingSpace40) {
                         intro
-                        eventCard
+                        hardiksEdit.revealOnScroll()
+                        benefits.revealOnScroll()
+                        VStack(spacing: 50) {
+                            howToShop.revealOnScroll()
+                            collection.id(Self.collectionID)
+                        }
+                        help.revealOnScroll()
                     }
-                    hardikRail.revealOnScroll()
-                    benefits.revealOnScroll()
-                    howToShop.revealOnScroll()
-                    collection.id(Self.collectionID)
-                    help.revealOnScroll()
-                    finale.revealOnScroll()
+                    // The title rides up over the portrait's fade, as in the Figma.
+                    .padding(.top, -22)
+                    finale
                 }
-                .padding(.bottom, 96)
                 .onScrollOffset { scrollY = $0 }
             }
             .scrollIndicators(.hidden)
@@ -196,6 +164,7 @@ struct HPDropView: View {
     }
 
     private static let collectionID = "collection"
+    private static let headerHeight: CGFloat = 378
 
     // MARK: Top bar
 
@@ -221,7 +190,7 @@ struct HPDropView: View {
                 .opacity(collapsed ? 1 : 0)
                 .offset(y: collapsed ? 0 : 8)
             Spacer()
-            ShareLink(item: "SG × Hardik Pandya: the HP33 birthday drop, only on District. \(HPDrop.dropDateShort)") {
+            ShareLink(item: "SG × Hardik Pandya: Born to be 33, only on District. \(HPDrop.dropDateShort)") {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(M.iconPrimary)
@@ -235,17 +204,23 @@ struct HPDropView: View {
         .animation(.easeInOut(duration: 0.25), value: collapsed)
     }
 
-    // MARK: Header image
+    // MARK: Header
 
-    /// Hardik's birthday portrait, full-bleed under the status bar. It stretches when pulled down,
-    /// drifts at half speed as the page scrolls, and melts into the page at the bottom.
+    /// Hardik's birthday portrait, a cutout over a soft spotlight, full-bleed under the status bar.
+    /// It stretches when pulled down, drifts at half speed as the page scrolls, and fades into the
+    /// page at the bottom.
     private var header: some View {
         Color.clear
-            .frame(height: 400)
-            .overlay(alignment: .top) {
-                Image("hp_header")
-                    .resizable().scaledToFill()
-                    .frame(height: 400, alignment: .top)
+            .frame(height: Self.headerHeight)
+            .background(alignment: .bottom) {
+                Halo(width: 351, height: 263, blur: 72, opacity: 0.26).offset(y: 50)
+            }
+            .overlay(alignment: .topLeading) {
+                Image("hp_header_cutout")
+                    .resizable().scaledToFit()
+                    .containerRelativeFrame(.horizontal) { w, _ in w * 1.0711 }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .offset(y: -Self.headerHeight * 0.1597)
                     .visualEffect { v, proxy in
                         let y = proxy.frame(in: .scrollView(axis: .vertical)).minY
                         return v
@@ -255,85 +230,103 @@ struct HPDropView: View {
             }
             .clipped()
             .overlay(alignment: .bottom) {
-                LinearGradient(colors: [P.page.opacity(0), P.page], startPoint: .top, endPoint: .bottom)
-                    .frame(height: 140)
+                LinearGradient(stops: [.init(color: P.page.opacity(0), location: 0.127), .init(color: P.page, location: 0.908)],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 61)
             }
             .accessibilityElement()
-            .accessibilityLabel("Hardik Pandya smiling beside a 33 birthday candle")
+            .accessibilityLabel("Hardik Pandya smiling as a hand brings in 33 birthday candles")
             .accessibilityAddTraits(.isImage)
     }
 
-    // MARK: Title, subtitle, exclusive
+    // MARK: Title, exclusive band, lockup, date and venue
 
     private var intro: some View {
-        VStack(spacing: R.spacingSpace32) {
-            VStack(spacing: R.spacingSpace12) {
-                Text("SG × HP33 · BIRTHDAY DROP")
-                    .font(.custom("BeVietnamPro-Medium", size: 12, relativeTo: .caption))
-                    .tracking(1.2)
-                    .foregroundStyle(M.textTertiary)
-                GlowTitle(text: "10 years. One Legacy.", size: 26)
-                Text("Hardik turns 33 on 11 October. To celebrate a decade with SG, the HP33 collection drops on his birthday.")
-                    .backstageText(.body2)
-                    .foregroundStyle(M.textPrimary.opacity(0.5))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    .frame(maxWidth: 300)
+        VStack(spacing: R.spacingSpace24) {
+            VStack(spacing: R.spacingSpace16) {
+                VStack(spacing: R.spacingSpace8) {
+                    // Figma sets this in Roc Grotesk Wide Bold, which isn't bundled.
+                    Text("BORN TO BE \(Text("३३").font(.custom("BeVietnamPro-ExtraBold", size: 38.8, relativeTo: .largeTitle)))")
+                        .font(.custom("BeVietnamPro-ExtraBold", size: 34, relativeTo: .largeTitle))
+                        .tracking(0.34)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .textureFill("hp_tex_born")
+                        .accessibilityLabel("Born to be 33")
+                        .accessibilityAddTraits(.isHeader)
+                    Text("A collection that brings together SG’s cricket legacy and Hardik’s signature style.")
+                        .campaignText("BeVietnamPro-Regular", 14, lineHeight: 22, relativeTo: .subheadline)
+                        .foregroundStyle(M.textPrimary.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 308)
+                }
+                exclusiveBand
             }
-            VStack(spacing: R.spacingSpace24) {
-                ExclusiveLine()
-                HPLockup(height: 52)
-            }
+            HPLockup(height: 59)
+            eventCard
         }
         .padding(.horizontal, R.spacingSpace16)
-        .padding(.top, -R.spacingSpace24)
-        .padding(.bottom, R.spacingSpace8)
     }
 
-    // MARK: Date and location
+    /// "Exclusively on District" between two sparks, on a silver band that fades at both ends.
+    private var exclusiveBand: some View {
+        HStack(spacing: 10) {
+            Image("hp_spark")
+            Text("EXCLUSIVELY ON DISTRICT")
+                .campaignText("BeVietnamPro-Medium", 14, lineHeight: 18, relativeTo: .subheadline)
+                .textureFill("hp_tex_exclusive")
+                .shadow(color: P.champagneGlow, radius: 16, y: 4)
+            Image("hp_spark")
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 34)
+        .background {
+            LinearGradient(stops: [.init(color: P.bandEdge, location: 0), .init(color: P.band, location: 0.488), .init(color: P.bandEdge, location: 1)],
+                           startPoint: .leading, endPoint: .trailing)
+                .blendMode(.hardLight)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Exclusively on District")
+    }
 
     private var eventCard: some View {
         VStack(spacing: R.spacingSpace16) {
-            eventRow(icon: "calendar", title: HPDrop.dropDateLong) {
-                DropsIn(target: HPDrop.dropDate)
-            }
+            eventRow(icon: "hp_ic_calendar", title: HPDrop.dropDateLong, detail: HPDrop.storeOpens)
             Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
-            eventRow(icon: "mappin.and.ellipse", title: HPDrop.stores) {
-                Text(HPDrop.storesDetail)
-            }
+            eventRow(icon: "hp_ic_location", title: HPDrop.venue, detail: nil)
         }
         .padding(R.spacingSpace16)
         .glassCard(radius: R.cornerRadiusCorner24)
-        .padding(.horizontal, R.spacingSpace16)
     }
 
-    private func eventRow<Detail: View>(icon: String, title: String, @ViewBuilder detail: () -> Detail) -> some View {
+    private func eventRow(icon: String, title: String, detail: String?) -> some View {
         HStack(spacing: R.spacingSpace12) {
-            Image(systemName: icon)
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(M.iconPrimary)
+            Image(icon)
                 .frame(width: 40, height: 40)
                 .background(M.surfaceSecondary, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).backstageText(.label1).foregroundStyle(M.textPrimary)
-                detail().backstageText(.body3).foregroundStyle(M.textPrimary.opacity(0.5))
+                Text(title)
+                    .campaignText("BeVietnamPro-Medium", 14, lineHeight: 18, relativeTo: .subheadline)
+                    .foregroundStyle(M.textPrimary)
+                if let detail {
+                    Text(detail).backstageText(.body3).foregroundStyle(M.textPrimary.opacity(0.5))
+                }
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(M.iconTertiary)
+            Image("hp_ic_chevron").accessibilityHidden(true)
         }
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Hardik Pandya rail
+    // MARK: Hardik's edit
 
-    private var hardikRail: some View {
-        VStack(spacing: R.spacingSpace24) {
-            SectionTitle(eyebrow: "Hardik Pandya", title: "The Hardik story")
+    private var hardiksEdit: some View {
+        VStack(spacing: R.spacingSpace16) {
+            SectionHeading(eyebrow: "The 33 story", title: "Hardik’s edit", texture: "hp_tex_edit")
             ScrollView(.horizontal) {
                 LazyHStack(spacing: R.spacingSpace12) {
-                    ForEach(HPDrop.facts, id: \.image) { HardikCard(fact: $0) }
+                    ForEach(HPDrop.edit, id: \.image) { EditCard(item: $0) }
                 }
                 .scrollTargetLayout()
             }
@@ -341,58 +334,73 @@ struct HPDropView: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
         }
+        .background { Halo(width: 349.5, height: 244.5, blur: 89, opacity: 0.26) }
     }
 
     // MARK: Benefits
 
     private var benefits: some View {
-        VStack(spacing: R.spacingSpace20) {
-            SparkleRule(text: "District benefits")
+        VStack(spacing: R.spacingSpace16) {
+            SparkRule(text: "District benefits")
             VStack(spacing: R.spacingSpace12) {
-                ForEach(HPDrop.benefits, id: \.title) { BenefitCard(benefit: $0) }
+                ForEach(HPDrop.benefits, id: \.title) { BenefitRow(benefit: $0) }
             }
-            .padding(.horizontal, R.spacingSpace16)
         }
+        .padding(.horizontal, R.spacingSpace16)
     }
 
     // MARK: How to shop
 
     private var howToShop: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace20) {
-            Text("How to shop the drop")
-                .font(.custom("BeVietnamPro-SemiBold", size: 20, relativeTo: .title2))
-                .tracking(-0.4)
-                .foregroundStyle(M.textPrimary)
-                .frame(maxWidth: .infinity)
-                .accessibilityAddTraits(.isHeader)
-            VStack(alignment: .leading, spacing: R.spacingSpace0) {
+        VStack(spacing: R.spacingSpace12) {
+            FoilTitle(text: "How to shop the drop", texture: "hp_tex_howto", font: "BeVietnamPro-SemiBold", size: 22, lineHeight: 28, tracking: -0.22)
+            VStack(alignment: .leading, spacing: 5) {
                 ForEach(Array(HPDrop.steps.enumerated()), id: \.offset) { i, step in
-                    StepRow(number: i + 1, step: step, isLast: i == HPDrop.steps.count - 1)
+                    if i > 0 { Image("hp_step_connector").accessibilityHidden(true) }
+                    StepRow(step: step)
                 }
             }
+            .padding(R.spacingSpace12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(P.stepCard, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
+            .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner16).strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
         }
-        .padding(R.spacingSpace20)
-        .glassCard(radius: R.cornerRadiusCorner24)
+        .padding(.top, R.spacingSpace16)
+        .padding([.horizontal, .bottom], R.spacingSpace8)
+        .background(P.stepPanel, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner20))
         .padding(.horizontal, R.spacingSpace16)
     }
 
     // MARK: Collection
 
+    /// A centred carousel: the focused piece at full size, its neighbours slightly smaller and dimmer.
     private var collection: some View {
-        VStack(spacing: R.spacingSpace24) {
-            SectionTitle(eyebrow: "Birthday drop", title: "Full collection")
-            ScrollView(.horizontal) {
-                LazyHStack(alignment: .top, spacing: R.spacingSpace12) {
-                    ForEach(Array(HPDrop.products.enumerated()), id: \.element.id) { i, product in
-                        Button { selected = product } label: { SKUCard(product: product, number: i + 1, count: HPDrop.products.count) }
-                            .buttonStyle(PressableStyle())
+        VStack(spacing: R.spacingSpace16) {
+            VStack(spacing: R.spacingSpace24) {
+                SectionHeading(eyebrow: "Birthday drop", title: "Full collection", texture: "hp_tex_collection")
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: R.spacingSpace4) {
+                        ForEach(HPDrop.products) { product in
+                            Button { selected = product } label: { SKUCard(product: product) }
+                                .buttonStyle(PressableStyle())
+                                .visualEffect { v, proxy in
+                                    let frame = proxy.frame(in: .scrollView(axis: .horizontal))
+                                    let width = proxy.bounds(of: .scrollView(axis: .horizontal))?.width ?? frame.width
+                                    // 0 for the centred card, 1 for its neighbours and beyond.
+                                    let t = min(1, abs(frame.midX - width / 2) / frame.width)
+                                    return v.scaleEffect(1 - 0.1 * t).opacity(1 - 0.2 * t)
+                                }
+                        }
                     }
+                    .scrollTargetLayout()
                 }
-                .scrollTargetLayout()
+                .scrollPosition(id: $focused, anchor: .center)
+                .contentMargins(.horizontal, max(R.spacingSpace16, (railWidth - SKUCard.width) / 2), for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+                .scrollIndicators(.hidden)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { railWidth = $0 }
             }
-            .contentMargins(.horizontal, R.spacingSpace16, for: .scrollContent)
-            .scrollTargetBehavior(.viewAligned)
-            .scrollIndicators(.hidden)
+            PageDots(count: HPDrop.products.count, index: HPDrop.products.firstIndex { $0.id == focused } ?? 0)
         }
     }
 
@@ -400,22 +408,25 @@ struct HPDropView: View {
 
     private var help: some View {
         VStack(spacing: R.spacingSpace16) {
-            helpRow(icon: "questionmark.circle", title: "Frequently asked questions")
+            helpRow(icon: "hp_ic_faq", title: "Frequently asked questions")
             Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px)
-            helpRow(icon: "doc.text", title: "Terms and conditions")
+            helpRow(icon: "hp_ic_terms", title: "Terms and conditions")
         }
         .padding(R.spacingSpace16)
-        .glassCard(radius: R.cornerRadiusCorner16)
+        .background(M.backgroundPrimary, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
+        .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner16).strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
         .padding(.horizontal, R.spacingSpace16)
     }
 
     private func helpRow(icon: String, title: String) -> some View {
         Button {} label: {
             HStack(spacing: R.spacingSpace16) {
-                Image(systemName: icon).font(.system(size: 18)).foregroundStyle(M.iconSecondary)
-                Text(title).backstageText(.label1).foregroundStyle(M.textPrimary)
+                Image(icon).accessibilityHidden(true)
+                Text(title)
+                    .campaignText("BeVietnamPro-Medium", 14, lineHeight: 20, tracking: -0.24, relativeTo: .subheadline)
+                    .foregroundStyle(M.textPrimary)
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(M.iconTertiary)
+                Image("hp_ic_chevron_muted").accessibilityHidden(true)
             }
             .frame(minHeight: 32)
             .contentShape(Rectangle())
@@ -425,35 +436,33 @@ struct HPDropView: View {
 
     // MARK: Logo
 
-    /// The sign-off: the SG × HP lockup on a stage of a giant, ghosted 33.
+    /// The sign-off: the SG × HP lockup and "Only on District" over a giant, ghosted ३३.
     private var finale: some View {
-        ZStack {
-            Text("33")
-                .font(anton(300))
-                .foregroundStyle(LinearGradient(colors: [.white.opacity(0.07), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
+        ZStack(alignment: .top) {
+            // Figma sets the ३३ in Cabinet Grotesk Bold, which isn't bundled.
+            Text("३३")
+                .font(.system(size: 303, weight: .bold))
+                .tracking(-33.4)
+                .foregroundStyle(M.textWhite.opacity(0.04))
+                .fixedSize()
                 .accessibilityHidden(true)
-            Ellipse()
-                .fill(P.silver.opacity(0.16))
-                .frame(width: 280, height: 160)
-                .blur(radius: 60)
-                .accessibilityHidden(true)
-            VStack(spacing: R.spacingSpace16) {
-                HPLockup(height: 60)
-                GlowTitle(text: "Happy 33rd, Hardik", size: 22)
-                HStack(spacing: R.spacingSpace8) {
-                    Text("ONLY ON")
-                        .font(.custom("BeVietnamPro-SemiBold", size: 10, relativeTo: .caption2))
-                        .tracking(1.6)
+            Halo(width: 283, height: 198, blur: 72, opacity: 0.26)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            VStack(spacing: 18) {
+                HPLockup(height: 65)
+                HStack(spacing: 10) {
+                    Text("ONLY ON").campaignText("BeVietnamPro-Regular", 16, lineHeight: 24, relativeTo: .body)
                     Image("hp_district_wordmark")
                         .resizable().scaledToFit()
-                        .frame(height: 13)
+                        .frame(height: 16)
                 }
-                .foregroundStyle(M.textTertiary)
+                .foregroundStyle(M.textWhite)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Only on District")
             }
+            .padding(.top, 147)
         }
-        .frame(height: 340)
+        .frame(width: 283, height: 410)
         .frame(maxWidth: .infinity)
         .clipped()
     }
@@ -461,390 +470,331 @@ struct HPDropView: View {
 
 // MARK: - Page pieces
 
-/// Bold title in bright silver with a white bloom behind it and a soft spotlight under it.
-private struct GlowTitle: View {
-    let text: String
-    var size: CGFloat = 28
+/// Be Vietnam Pro at a campaign size with the Figma line height, scaled with Dynamic Type. The
+/// campaign file uses District's 14pt body and label sizes, which differ from the Backstage styles.
+private struct CampaignText: ViewModifier {
+    let font: String
+    let size: CGFloat
+    let lineHeight: CGFloat?
+    let tracking: CGFloat
+    @ScaledMetric private var scale: CGFloat
 
-    private var fill: LinearGradient {
-        LinearGradient(stops: [.init(color: .white, location: 0), .init(color: .white, location: 0.45), .init(color: Color(rgba: 0xC9CACFFF), location: 1)],
-                       startPoint: .top, endPoint: .bottom)
+    init(font: String, size: CGFloat, lineHeight: CGFloat?, tracking: CGFloat, relativeTo: Font.TextStyle) {
+        self.font = font
+        self.size = size
+        self.lineHeight = lineHeight
+        self.tracking = tracking
+        _scale = ScaledMetric(wrappedValue: 1, relativeTo: relativeTo)
     }
 
-    var body: some View {
-        title
-            .foregroundStyle(fill)
-            .shadow(color: .white.opacity(0.35), radius: 1)
-            .background {
-                title.foregroundStyle(.white).blur(radius: size * 0.4).opacity(0.4).accessibilityHidden(true)
+    func body(content: Content) -> some View {
+        content
+            .font(.custom(font, fixedSize: size * scale))
+            .tracking(tracking * scale)
+            .lineSpacing(lineHeight.map { max(0, ($0 - size * 1.265) * scale) } ?? 0)
+    }
+}
+
+/// Fills text with one of the campaign's foil textures (the Figma's image text fills).
+private struct TextureFill: ViewModifier {
+    let texture: String
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(.clear)
+            .overlay {
+                Image(texture).resizable().mask { content }.accessibilityHidden(true)
             }
+    }
+}
+
+private extension View {
+    func campaignText(_ font: String, _ size: CGFloat, lineHeight: CGFloat? = nil, tracking: CGFloat = 0, relativeTo: Font.TextStyle) -> some View {
+        modifier(CampaignText(font: font, size: size, lineHeight: lineHeight, tracking: tracking, relativeTo: relativeTo))
+    }
+
+    func textureFill(_ texture: String) -> some View { modifier(TextureFill(texture: texture)) }
+}
+
+/// The Figma's blurred elliptical spotlights behind the header, sections and products.
+private struct Halo: View {
+    var colors: [Color] = [P.haloCore, P.haloEdge]
+    let width: CGFloat
+    let height: CGFloat
+    let blur: CGFloat
+    let opacity: Double
+
+    var body: some View {
+        Ellipse()
+            .fill(EllipticalGradient(colors: colors))
+            .frame(width: width, height: height)
+            .blur(radius: blur)
+            .opacity(opacity)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Foil-textured title over a soft, blurred copy of itself.
+private struct FoilTitle: View {
+    let text: String
+    let texture: String
+    var font = "BeVietnamPro-Bold"
+    var size: CGFloat = 24
+    var lineHeight: CGFloat = 30
+    var tracking: CGFloat = -0.48
+    /// The blurred copy sits slightly above the title in the section headings.
+    var glowOffset: CGFloat = 0
+
+    var body: some View {
+        label
+            .textureFill(texture)
             .background {
-                Ellipse().fill(.white.opacity(0.07)).frame(width: size * 9, height: size * 2.4).blur(radius: 30).accessibilityHidden(true)
+                label
+                    .foregroundStyle(LinearGradient(colors: [M.textPrimary, P.glowFloor], startPoint: .top, endPoint: .bottom))
+                    .blur(radius: 7)
+                    .opacity(0.5)
+                    .offset(y: glowOffset)
+                    .accessibilityHidden(true)
             }
             .accessibilityAddTraits(.isHeader)
     }
 
-    private var title: some View {
+    private var label: some View {
         Text(text)
-            .font(.custom("BeVietnamPro-Bold", size: size, relativeTo: .title))
-            .tracking(-size * 0.03)
+            .campaignText(font, size, lineHeight: lineHeight, tracking: tracking, relativeTo: .title2)
             .multilineTextAlignment(.center)
     }
 }
 
-/// Small uppercase eyebrow over a glow title.
-private struct SectionTitle: View {
-    let eyebrow: String
-    let title: String
-
-    var body: some View {
-        VStack(spacing: R.spacingSpace8) {
-            Text(eyebrow.uppercased())
-                .font(.custom("BeVietnamPro-Medium", size: 12, relativeTo: .caption))
-                .tracking(1.2)
-                .foregroundStyle(M.textSecondary)
-            GlowTitle(text: title, size: 28)
-        }
-        .padding(.horizontal, R.spacingSpace16)
-    }
-}
-
-/// Four-point spark from the campaign artwork.
-private struct Spark: Shape {
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        let c = CGPoint(x: r.midX, y: r.midY)
-        p.move(to: CGPoint(x: r.midX, y: r.minY))
-        p.addQuadCurve(to: CGPoint(x: r.maxX, y: c.y), control: c)
-        p.addQuadCurve(to: CGPoint(x: r.midX, y: r.maxY), control: c)
-        p.addQuadCurve(to: CGPoint(x: r.minX, y: c.y), control: c)
-        p.addQuadCurve(to: CGPoint(x: r.midX, y: r.minY), control: c)
-        return p
-    }
-}
-
-/// Uppercase label between two sparks and fading hairlines (section headers).
-private struct SparkleRule: View {
+/// Uppercase eyebrow in a silver sheen with a faint champagne glow.
+private struct Eyebrow: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: R.spacingSpace12) {
-            LinearGradient(colors: [.white.opacity(0), .white.opacity(0.3)], startPoint: .leading, endPoint: .trailing).frame(height: R.stroke1Px)
-            SparkLabel(text: text)
-            LinearGradient(colors: [.white.opacity(0.3), .white.opacity(0)], startPoint: .leading, endPoint: .trailing).frame(height: R.stroke1Px)
+        Text(text.uppercased())
+            .campaignText("BeVietnamPro-Medium", 12, tracking: 1.2, relativeTo: .caption)
+            .foregroundStyle(P.sheen)
+            .shadow(color: P.champagneGlow, radius: 16, y: 4)
+    }
+}
+
+/// Eyebrow over a foil title (Hardik's edit, Full collection).
+private struct SectionHeading: View {
+    let eyebrow: String
+    let title: String
+    let texture: String
+
+    var body: some View {
+        VStack(spacing: R.spacingSpace12) {
+            Eyebrow(text: eyebrow)
+            FoilTitle(text: title, texture: texture, glowOffset: -8)
         }
         .padding(.horizontal, R.spacingSpace16)
     }
 }
 
-private struct SparkLabel: View {
+/// Uppercase label between two sparks and fading hairlines (District benefits).
+private struct SparkRule: View {
     let text: String
 
     var body: some View {
         HStack(spacing: R.spacingSpace8) {
-            Spark().fill(Color(rgba: 0xF3F3F3FF)).frame(width: 10, height: 14)
+            hairline(fadingTo: .leading)
+            Image("hp_spark")
             Text(text.uppercased())
-                .font(.custom("BeVietnamPro-Medium", size: 12, relativeTo: .footnote))
-                .tracking(1.6)
-                .foregroundStyle(LinearGradient(colors: [.white, Color(rgba: 0x999999FF)], startPoint: .leading, endPoint: .trailing))
-                .shadow(color: Color(rgba: 0xF8E99633), radius: 16, y: 4)
+                .campaignText("BeVietnamPro-SemiBold", 16, lineHeight: 22, tracking: 0.8, relativeTo: .headline)
+                .foregroundStyle(P.sheen)
+                .shadow(color: P.champagneGlow, radius: 16, y: 4)
+                .fixedSize()
                 .accessibilityAddTraits(.isHeader)
-            Spark().fill(Color(rgba: 0xF3F3F3FF)).frame(width: 10, height: 14)
-        }
-        .fixedSize()
-    }
-}
-
-/// "Exclusively on District", quiet: sparked label on a faint silver band that fades at both ends.
-private struct ExclusiveLine: View {
-    var body: some View {
-        SparkLabel(text: "Exclusively on District")
-            .frame(maxWidth: .infinity)
-            .frame(height: 28)
-            .background {
-                LinearGradient(colors: [Color(rgba: 0x99999900), Color(rgba: 0x8A8A8A4D), Color(rgba: 0x99999900)], startPoint: .leading, endPoint: .trailing)
-            }
-            .overlay(alignment: .top) { hairline }
-            .overlay(alignment: .bottom) { hairline }
-    }
-
-    private var hairline: some View {
-        LinearGradient(colors: [.white.opacity(0), .white.opacity(0.16), .white.opacity(0)], startPoint: .leading, endPoint: .trailing)
-            .frame(height: R.stroke1Px)
-    }
-}
-
-/// Live "Drops in 1d 19h 11m"; "Live now" once it passes.
-private struct DropsIn: View {
-    let target: Date
-
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            let s = max(0, Int(target.timeIntervalSince(context.date)))
-            if s == 0 {
-                Text("Live now · store opens at 11 AM")
-            } else {
-                Text("Drops in \(s / 86_400)d \(s % 86_400 / 3600)h \(s % 3600 / 60)m \(s % 60)s")
-                    .monospacedDigit()
-                    .contentTransition(.numericText(countsDown: true))
-                    .animation(.snappy, value: s)
-            }
+            Image("hp_spark")
+            hairline(fadingTo: .trailing)
         }
     }
+
+    private func hairline(fadingTo end: UnitPoint) -> some View {
+        LinearGradient(colors: [P.sparkWhite, P.sparkWhite.opacity(0)], startPoint: end == .leading ? .trailing : .leading, endPoint: end)
+            .frame(height: 0.5)
+            .opacity(0.5)
+    }
 }
 
-/// A card in the Hardik rail: his photo full-bleed, with a tag, title and line over a scrim.
-private struct HardikCard: View {
-    let fact: HPFact
+/// A card in Hardik's edit: his photo full-bleed, with a title and line over a blurred scrim.
+private struct EditCard: View {
+    let item: HPEdit
+    private static let size = CGSize(width: 232, height: 317)
 
     var body: some View {
         Color.clear
-            .frame(width: 240, height: 320)
-            .overlay(alignment: .top) {
-                Image(fact.image)
+            .frame(width: Self.size.width, height: Self.size.height)
+            .overlay(alignment: .topLeading) {
+                // The Figma crop, in card points.
+                Image(item.image)
                     .resizable().scaledToFill()
-                    .frame(width: 240, height: 320, alignment: Alignment(horizontal: .center, vertical: fact.focus == .top ? .top : .center))
+                    .frame(width: item.crop.width, height: item.crop.height)
+                    .offset(x: item.crop.minX, y: item.crop.minY)
             }
-            .overlay {
-                LinearGradient(stops: [.init(color: .clear, location: 0.35), .init(color: P.page.opacity(0.7), location: 0.62), .init(color: P.page.opacity(0.97), location: 1)],
-                               startPoint: .top, endPoint: .bottom)
-            }
-            .overlay(alignment: .bottomLeading) {
-                VStack(alignment: .leading, spacing: R.spacingSpace4) {
-                    Text(fact.tag.uppercased())
-                        .font(.custom("BeVietnamPro-SemiBold", fixedSize: 10))
-                        .tracking(1.4)
-                        .foregroundStyle(P.silverLight)
-                        .padding(.horizontal, R.spacingSpace8)
-                        .frame(height: 20)
-                        .background(.white.opacity(0.12), in: Capsule())
-                        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: R.stroke1Px))
-                        .padding(.bottom, R.spacingSpace4)
-                    Text(fact.title)
-                        .font(.custom("BeVietnamPro-Bold", size: 19, relativeTo: .headline))
-                        .tracking(-0.4)
-                        .foregroundStyle(M.textWhite)
-                    Text(fact.text)
-                        .backstageText(.body3)
-                        .foregroundStyle(M.textWhite.opacity(0.72))
-                        .lineLimit(3, reservesSpace: true)
-                }
-                .padding(R.spacingSpace16)
-            }
+            .overlay(alignment: .bottom) { caption }
             .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner24))
-            .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner24).strokeBorder(LinearGradient(colors: [.white.opacity(0.2), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom), lineWidth: R.stroke1Px))
+            .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner24).strokeBorder(P.cardEdge, lineWidth: R.stroke1Px))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(fact.title). \(fact.text)")
+            .accessibilityLabel("\(item.title). \(item.text)")
+    }
+
+    private var caption: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace4) {
+            Text(item.title)
+                .campaignText("BeVietnamPro-SemiBold", 16, lineHeight: 22, tracking: -0.16, relativeTo: .headline)
+                .foregroundStyle(M.textWhite)
+                .lineLimit(1)
+            Text(item.text)
+                .backstageText(.body3)
+                .foregroundStyle(P.captionText)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, R.spacingSpace16)
+        .padding(.top, 26)
+        .padding(.bottom, R.spacingSpace16)
+        .background {
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                    .mask(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.35)))
+                LinearGradient(colors: [.black.opacity(0), .black.opacity(0.75)], startPoint: .top, endPoint: .bottom)
+            }
+        }
     }
 }
 
-/// One District benefit: its 3D icon floating over a lit pedestal, then the title and a line, on a
-/// silver-edged card. All three cards share one size.
-private struct BenefitCard: View {
+/// One District benefit: its 3D icon, then a warm-silver title and a line, on a glass card.
+private struct BenefitRow: View {
     let benefit: HPBenefit
 
     var body: some View {
-        HStack(spacing: R.spacingSpace16) {
-            ZStack(alignment: .bottom) {
-                Ellipse()
-                    .fill(RadialGradient(colors: [benefit.glow.opacity(0.6), .clear], center: .center, startRadius: 0, endRadius: 32))
-                    .frame(width: 64, height: 14)
-                    .offset(y: 4)
-                Image(benefit.image)
-                    .resizable().scaledToFit()
-                    .frame(width: 50, height: 50)
-                    .shadow(color: benefit.glow.opacity(0.5), radius: 14, y: 8)
-                    .padding(.bottom, R.spacingSpace8)
-            }
-            .frame(width: 68, height: 68)
-            .accessibilityHidden(true)
+        HStack(spacing: R.spacingSpace12) {
+            Image(benefit.image)
+                .resizable().scaledToFit()
+                .frame(width: 32, height: 32)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: R.spacingSpace4) {
-                Text(benefit.title)
-                    .font(.custom("BeVietnamPro-SemiBold", size: 16, relativeTo: .headline))
-                    .tracking(-0.2)
-                    .foregroundStyle(M.textPrimary)
-                Text(benefit.detail)
-                    .backstageText(.body3)
-                    .foregroundStyle(M.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(benefit.title).backstageText(.title4).foregroundStyle(P.warmSheen)
+                Text(benefit.detail).backstageText(.body3).foregroundStyle(M.textPrimary.opacity(0.5))
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, R.spacingSpace16)
-        .padding(.vertical, R.spacingSpace12)
-        .background {
-            RoundedRectangle(cornerRadius: R.cornerRadiusCorner20)
-                .fill(LinearGradient(colors: [Color(rgba: 0x1E1E22FF), Color(rgba: 0x101012FF)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .overlay(alignment: .leading) {
-                    Ellipse().fill(benefit.glow.opacity(0.2)).frame(width: 150, height: 110).blur(radius: 36).offset(x: -30)
-                }
-                .overlay {
-                    // Brushed-metal sheen across the top.
-                    LinearGradient(colors: [.white.opacity(0.06), .clear], startPoint: .top, endPoint: .center)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner20))
+        .padding(R.spacingSpace16)
+        .background(alignment: .topLeading) {
+            Ellipse().fill(P.benefitGlow).frame(width: 185, height: 90).blur(radius: 22).opacity(0.5).offset(x: -1, y: -7)
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: R.cornerRadiusCorner20)
-                .strokeBorder(AngularGradient(colors: [P.silverLight.opacity(0.5), P.silverDeep.opacity(0.2), P.silver.opacity(0.4), P.silverDeep.opacity(0.15), P.silverLight.opacity(0.5)],
-                                              center: .center),
-                              lineWidth: R.stroke1Px)
-        }
+        .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
+        .glassCard(radius: R.cornerRadiusCorner16)
         .accessibilityElement(children: .combine)
     }
 }
 
-/// A how-to step on a numbered timeline.
+/// A how-to step: its icon tile, lit from below, and the instruction.
 private struct StepRow: View {
-    let number: Int
     let step: HPStep
-    let isLast: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: R.spacingSpace12) {
-            VStack(spacing: R.spacingSpace4) {
-                Image(systemName: step.icon)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(M.iconPrimary)
-                    .frame(width: 40, height: 40)
-                    .background(M.surfaceSecondary, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
-                if !isLast {
-                    Rectangle()
-                        .fill(LinearGradient(colors: [.white.opacity(0.2), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom))
-                        .frame(width: R.stroke1Px)
-                        .frame(maxHeight: .infinity)
+        HStack(alignment: .top, spacing: R.spacingSpace16) {
+            Image(step.icon)
+                .overlay(alignment: .bottom) {
+                    Ellipse().fill(M.textPrimary).frame(width: 40, height: 11).blur(radius: 12).opacity(0.4).offset(y: 2.9)
                 }
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("STEP \(number)")
-                    .font(.custom("BeVietnamPro-Medium", fixedSize: 10))
-                    .tracking(1.2)
-                    .foregroundStyle(M.textTertiary)
-                Text(step.title).backstageText(.label1).foregroundStyle(M.textPrimary)
-                Text(step.text).backstageText(.body3).foregroundStyle(M.textSecondary)
-            }
-            .padding(.top, 2)
-            .padding(.bottom, isLast ? 0 : R.spacingSpace20)
-            Spacer(minLength: 0)
+                .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner8))
+                .accessibilityHidden(true)
+            Text(step.text)
+                .campaignText("BeVietnamPro-Regular", 14, lineHeight: 22, relativeTo: .subheadline)
+                .foregroundStyle(M.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityElement(children: .combine)
     }
 }
 
-/// A collection piece as a showcase card: the product glowing on a spotlit stage, with its name
-/// and price inside the card.
+/// A collection piece: the product under its coloured halo, with the name and price centred below.
 private struct SKUCard: View {
+    static let width: CGFloat = 272
     let product: HPProduct
-    let number: Int
-    let count: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace0) {
-            stage
-            VStack(alignment: .leading, spacing: R.spacingSpace12) {
+        VStack(spacing: R.spacingSpace0) {
+            Image(product.cardImage)
+                .resizable().scaledToFit()
+                .frame(maxWidth: 230, maxHeight: product.cardImageHeight)
+                .rotationEffect(.degrees(product.cardTilt))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, R.spacingSpace12)
+            VStack(spacing: R.spacingSpace8) {
                 Text(product.name)
-                    .font(.custom("BeVietnamPro-SemiBold", size: 17, relativeTo: .headline))
-                    .tracking(-0.3)
-                    .foregroundStyle(M.textPrimary)
-                    .multilineTextAlignment(.leading)
+                    .campaignText("BeVietnamPro-SemiBold", 16, lineHeight: 22, tracking: -0.16, relativeTo: .headline)
+                    .multilineTextAlignment(.center)
                     .lineLimit(2, reservesSpace: true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("MRP")
-                        .font(.custom("BeVietnamPro-Medium", fixedSize: 9))
-                        .tracking(1.2)
-                        .foregroundStyle(M.textTertiary)
-                    Text(product.price)
-                        .font(.custom("BeVietnamPro-Bold", size: 20, relativeTo: .title3))
-                        .foregroundStyle(LinearGradient(colors: [.white, P.silver], startPoint: .top, endPoint: .bottom))
-                }
+                    .frame(maxWidth: 217)
+                Text(product.price)
+                    .campaignText("BeVietnamPro-Regular", 14, lineHeight: 22, relativeTo: .subheadline)
             }
-            .padding(R.spacingSpace16)
+            .foregroundStyle(M.textWhite)
+            .padding(.horizontal, R.spacingSpace12)
+            .padding(.vertical, R.spacingSpace16)
+            .frame(maxWidth: .infinity)
         }
-        .frame(width: 280)
+        .frame(width: Self.width, height: 398)
         .background {
             RoundedRectangle(cornerRadius: R.cornerRadiusCorner24)
-                .fill(LinearGradient(colors: [Color(rgba: 0x1C1C20FF), Color(rgba: 0x0D0D0FFF)], startPoint: .top, endPoint: .bottom))
+                .fill(P.skuCard)
                 .overlay(alignment: .top) {
-                    Ellipse().fill(product.glow.opacity(0.22)).frame(width: 320, height: 220).blur(radius: 60).offset(y: -40)
+                    Halo(colors: product.halo, width: 283, height: 198, blur: 72, opacity: 0.4).offset(y: -71)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner24))
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: R.cornerRadiusCorner24)
-                .strokeBorder(LinearGradient(colors: [product.glow.opacity(0.45), .white.opacity(0.06), .white.opacity(0.03)], startPoint: .top, endPoint: .bottom),
-                              lineWidth: R.stroke1Px)
-        }
-        .shadow(color: product.glow.opacity(0.12), radius: 24, y: 10)
+        .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner24).strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
         .contentShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner24))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(product.name), \(product.price)")
         .accessibilityHint("Shows details and specs")
     }
+}
 
-    /// The product under a halo, standing on a soft reflection, with its edition tag and position.
-    private var stage: some View {
-        ZStack {
-            Circle()
-                .fill(product.glow.opacity(0.4))
-                .frame(width: 170, height: 170)
-                .blur(radius: 46)
-            Ellipse()
-                .fill(RadialGradient(colors: [product.glow.opacity(0.45), .clear], center: .center, startRadius: 0, endRadius: 80))
-                .frame(width: 170, height: 26)
-                .offset(y: 100)
-            Image(product.image)
-                .resizable().scaledToFit()
-                .frame(height: product.kind == .bat ? 212 : 165)
-                .rotationEffect(.degrees(product.kind == .bat ? 24 : 0))
-                .shadow(color: .black.opacity(0.6), radius: 14, y: 14)
-        }
-        .frame(height: 250)
-        .frame(maxWidth: .infinity)
-        .clipped()
-        .overlay(alignment: .top) {
-            HStack {
-                if let tag = product.tag {
-                    Text(tag)
-                        .font(.custom("BeVietnamPro-SemiBold", fixedSize: 9))
-                        .tracking(1.4)
-                        .foregroundStyle(P.silverLight)
-                        .padding(.horizontal, R.spacingSpace8)
-                        .frame(height: 22)
-                        .background(.white.opacity(0.08), in: Capsule())
-                        .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: R.stroke1Px))
-                }
-                Spacer()
-                Text(String(format: "%02d / %02d", number, count))
-                    .font(.custom("BeVietnamPro-Medium", fixedSize: 10))
-                    .tracking(1)
-                    .foregroundStyle(M.textTertiary)
+/// Carousel position: a pill for the focused card, dots for the rest.
+private struct PageDots: View {
+    let count: Int
+    let index: Int
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<count, id: \.self) { i in
+                Capsule()
+                    .fill(M.textPrimary)
+                    .frame(width: i == index ? 18 : 6, height: 6)
+                    .opacity(i == index ? 1 : 0.32)
             }
-            .padding(R.spacingSpace16)
         }
-        .overlay(alignment: .bottom) {
-            LinearGradient(colors: [.white.opacity(0), .white.opacity(0.1), .white.opacity(0)], startPoint: .leading, endPoint: .trailing)
-                .frame(height: R.stroke1Px)
-        }
+        .animation(.snappy, value: index)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Piece \(index + 1) of \(count)")
     }
 }
 
-/// Brushed-silver "Reserve now" pinned to the bottom (Figma's button).
+/// Brushed-silver "Reserve now" pinned to the bottom over a fade to black (Figma's button).
 private struct ReserveBar: View {
     var action: () -> Void
 
     var body: some View {
-        VStack(spacing: R.spacingSpace0) {
-            LinearGradient(colors: [P.page.opacity(0), P.page], startPoint: .top, endPoint: .bottom)
-                .frame(height: 32)
+        Button(action: action) {
+            Text("Reserve now").frame(maxWidth: .infinity)
+        }
+        .buttonStyle(MetalButtonStyle())
+        .accessibilityHint("Jumps to the full collection")
+        .padding(.horizontal, R.spacingSpace20)
+        .padding(.top, R.spacingSpace20)
+        .padding(.bottom, R.spacingSpace8)
+        .background {
+            LinearGradient(stops: [.init(color: P.reserveFloor.opacity(0), location: 0.07), .init(color: P.reserveFloor, location: 0.68)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
                 .allowsHitTesting(false)
-            Button(action: action) {
-                Text("Reserve now").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(MetalButtonStyle())
-            .accessibilityHint("Jumps to the full collection")
-            .padding(.horizontal, R.spacingSpace16)
-            .padding(.bottom, R.spacingSpace8)
-            .background(P.page)
         }
     }
 }
@@ -853,15 +803,9 @@ private struct MetalButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.custom("BeVietnamPro-SemiBold", size: 16, relativeTo: .body))
-            .foregroundStyle(Color(rgba: 0x111113FF))
+            .foregroundStyle(P.buttonInk)
             .frame(minHeight: 52)
-            .background {
-                Capsule().fill(LinearGradient(stops: [.init(color: Color(rgba: 0x8E8E92FF), location: 0), .init(color: Color(rgba: 0xF4F4F5FF), location: 0.35),
-                                                      .init(color: Color(rgba: 0xDCDCDFFF), location: 0.7), .init(color: Color(rgba: 0x8A8A8EFF), location: 1)],
-                                              startPoint: .leading, endPoint: .trailing))
-            }
-            .overlay(Capsule().strokeBorder(.white.opacity(0.5), lineWidth: R.stroke1Px))
-            .shadow(color: .white.opacity(0.12), radius: 16, y: 4)
+            .background(P.metal, in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.snappy(duration: 0.2), value: configuration.isPressed)
     }
@@ -1036,25 +980,53 @@ struct HPProduct: Identifiable {
     let specs: [(String, String)]
 }
 
-struct HPFact {
+extension HPProduct {
+    /// The collection card's shot: the angled studio cutouts for the bats.
+    var cardImage: String { kind == .bat ? image + "_angle" : image }
+
+    var cardImageHeight: CGFloat {
+        switch kind {
+        case .bat: 253
+        case .ball: 220
+        case .bag: 265
+        }
+    }
+
+    /// The small tilts the Figma gives each bat.
+    var cardTilt: Double {
+        switch id {
+        case "SG01CR131843": -7.82
+        case "SG01CR131845": 6.12
+        default: 0
+        }
+    }
+
+    /// The card's halo: cherry for the red ball, gold for the bags, silver otherwise.
+    var halo: [Color] {
+        if glow == P.cherry { return P.cherryHalo }
+        if kind == .bag { return P.goldHalo }
+        return [P.haloCore, P.haloEdge]
+    }
+}
+
+/// A card in Hardik's edit.
+struct HPEdit {
     let image: String
-    let tag: String
     let title: String
     let text: String
-    /// Where the face sits in the photo, so the card crop keeps it.
-    var focus: UnitPoint = .top
+    /// The photo's frame inside the 232 × 317 card, from the Figma.
+    let crop: CGRect
 }
 
 struct HPBenefit {
     let image: String
-    let glow: Color
     let title: String
     let detail: String
 }
 
 struct HPStep {
+    /// Icon tile asset.
     let icon: String
-    let title: String
     let text: String
 }
 
@@ -1063,22 +1035,21 @@ struct HPDropPresentation: Identifiable {
     let id = "sg-hp-10-years"
 }
 
-/// Drop content. Products, prices, copy and specs come from the SG × HP inventory sheet; the drop
-/// date and store line are placeholders until the launch plan is confirmed.
+/// Drop content. Products, prices, copy and specs come from the SG × HP inventory sheet; the
+/// times, venue, edit, benefits and steps come from the campaign Figma.
 enum HPDrop {
-    // Hardik's 33rd birthday (born 11 Oct 1993). The 11 AM time and store line are placeholders
-    // until the launch plan is confirmed with the SG team.
+    // Hardik's 33rd birthday (born 11 Oct 1993). The Figma shows "19th September" as a
+    // placeholder date; the 2 PM drop, 11 AM store opening and venue are from the Figma.
     static let dropDate: Date = {
         var c = DateComponents()
-        c.year = 2026; c.month = 10; c.day = 11; c.hour = 11
+        c.year = 2026; c.month = 10; c.day = 11; c.hour = 14
         c.timeZone = TimeZone(identifier: "Asia/Kolkata")
         return Calendar(identifier: .gregorian).date(from: c) ?? .now
     }()
-    static let dropDateShort = "Drops 11 Oct, 11 AM"
-    static let dropDateChip = "11 Oct, 11 AM"
-    static let dropDateLong = "11th October | 11:00 AM onwards"
-    static let stores = "SG stores on District"
-    static let storesDetail = "Reserve online, collect in store"
+    static let dropDateShort = "Drops 11 Oct, 2 PM"
+    static let dropDateLong = "11th October | 2:00 PM onwards"
+    static let storeOpens = "Store opens at 11 AM"
+    static let venue = "FutureWorld, DLF Avenue Mall Saket, New Delhi 110017, India"
 
     static let products: [HPProduct] = [
         HPProduct(
@@ -1177,25 +1148,30 @@ enum HPDrop {
         .init(title: "Machine-stitched seam", text: "Stays perfectly round and boosts swing potential."),
     ]
 
-    // Public record; worth a final check with the SG team before launch. Photo credits for the
-    // `hp_wiki_*` images are in PHOTO_CREDITS.txt.
-    static let facts: [HPFact] = [
-        HPFact(image: "hp_hardik", tag: "No. 33", title: "Meet Hardik", text: "All-rounder, captain, showman. On 11 October, his jersey number becomes his age."),
-        HPFact(image: "hp_wiki_street", tag: "11.10.1993", title: "Born in Surat", text: "His family moved to Baroda when he was young, and his cricket began there."),
-        HPFact(image: "hp_wiki_brothers", tag: "Brothers", title: "Pandya and Pandya", text: "Hardik and Krunal came up together, from Baroda to Mumbai Indians."),
-        HPFact(image: "hp_wiki_worldcup", tag: "2024", title: "World champion", text: "Bowled the final over of the T20 World Cup final as India won by 7 runs."),
+    // The Figma repeats one placeholder caption on every card ("Be the Part of Hardil’s bday by
+    // buying her merch"); this is it with the name and pronoun fixed, until final copy lands.
+    private static let editCaption = "Be part of Hardik’s birthday by buying his merch"
+    private static let portraitCrop = CGRect(x: -4.32, y: -0.84, width: 237.63, height: 316.84)
+
+    static let edit: [HPEdit] = [
+        HPEdit(image: "hp_edit_1", title: "Hardik X SG", text: editCaption, crop: CGRect(x: -94.53, y: -28.35, width: 453.67, height: 344.35)),
+        HPEdit(image: "hp_edit_2", title: "Hardik X SG", text: editCaption, crop: CGRect(x: -16.84, y: -27.77, width: 296.58, height: 370.71)),
+        HPEdit(image: "hp_edit_3", title: "Hardik X SG", text: editCaption, crop: portraitCrop),
+        HPEdit(image: "hp_edit_4", title: "Hardik X SG", text: editCaption, crop: CGRect(x: -20.82, y: -49.25, width: 292.22, height: 365.25)),
+        HPEdit(image: "hp_edit_5", title: "Hardik X SG", text: editCaption, crop: portraitCrop),
+        HPEdit(image: "hp_edit_6", title: "Hardik X SG", text: editCaption, crop: portraitCrop),
     ]
 
     static let benefits: [HPBenefit] = [
-        HPBenefit(image: "hp_icon_clock", glow: P.silver, title: "Skip the wait", detail: "Walk into the SG store and pick up your piece"),
-        HPBenefit(image: "hp_icon_bag", glow: P.willow, title: "Assured pickup", detail: "No delivery delays. Ready when promised"),
-        HPBenefit(image: "hp_icon_discount", glow: Color(rgba: 0x6D7CFFFF), title: "No Cost EMI", detail: "Easy instalments on credit card payments"),
+        HPBenefit(image: "hp_icon_tote", title: "Exclusive Collection", detail: "Explore the SG × Hardik collection"),
+        HPBenefit(image: "hp_icon_discount", title: "10% off & No-Cost EMI", detail: "Up to ₹4,000 OFF + Pay in 3 instalments"),
+        HPBenefit(image: "hp_icon_poster", title: "Hardik Pandya Signed Poster", detail: "Own a piece of the iconic collab"),
     ]
 
     static let steps: [HPStep] = [
-        HPStep(icon: "bag", title: "Pick your piece", text: "Choose from the HP33 drop on the District app"),
-        HPStep(icon: "creditcard", title: "Pay on District", text: "Complete your purchase. No Cost EMI available"),
-        HPStep(icon: "qrcode.viewfinder", title: "Collect in store", text: "Show your QR code at the SG store and take it home"),
+        HPStep(icon: "hp_step_explore", text: "Explore the iconic collection exclusively on District"),
+        HPStep(icon: "hp_step_book", text: "Book your slot to shop the collection in-store"),
+        HPStep(icon: "hp_step_pay", text: "Pay via District & get up to ₹4,000 OFF. No-Cost EMI options available."),
     ]
 }
 
