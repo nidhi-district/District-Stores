@@ -4,7 +4,7 @@ import PhotosUI
 private typealias M = BackstageTokens.Mapped
 private typealias R = BackstageTokens.Responsive
 
-// Virtual try-on: the app's AI feature, dressed in black and brushed silver. A glossy black pill marks it
+// Virtual try-on: the app's AI feature, dressed in black and brushed silver. A graphite "TryOn!" pill marks it
 // wherever it appears; the try-on screen keeps the chrome-on-black look.
 // This is the interaction prototype only: no model runs, the preview is a staged scan.
 
@@ -18,34 +18,43 @@ enum Metallic {
                                       startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
-/// The "Try on" control: a small, quiet black pill with white type and the faintest gloss on
-/// top. Still, so it never competes with the photo.
+/// The "Try on" control (Figma 7473:6358): a dark graphite pill reading "TryOn!", with a
+/// sparkle and a little 3D shirt on a hanger peeking in from the right edge. Still, no motion.
 struct TryOnButton: View {
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "sparkles").font(.system(size: 10, weight: .medium))
-                Text("Try on").font(.custom("BeVietnamPro-Medium", size: 11, relativeTo: .caption2))
-            }
-            .foregroundStyle(.white.opacity(0.92))
-            .padding(.horizontal, 10)
-            .frame(height: 26)
-            .background {
-                Capsule()
-                    .fill(Color.black.opacity(0.62))
-                    .overlay(alignment: .top) {
-                        Capsule()
-                            .fill(LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
-                            .frame(height: 12)
-                            .padding(.horizontal, 3)
-                            .padding(.top, 1)
-                    }
-            }
-            .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 0.5) }
-            .frame(minHeight: 44)
-            .contentShape(Capsule())
+            Text("TryOn!")
+                .font(.custom("BeVietnamPro-Medium", size: 11, relativeTo: .caption2))
+                .foregroundStyle(.white)
+                .padding(.leading, 7)
+                .frame(width: 77, height: 26, alignment: .leading)
+                .overlay(alignment: .topLeading) {
+                    // The shirt, mirrored as in the Figma, clipped by the pill's right end.
+                    Image("vogue_tryon_shirt")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 29, height: 29)
+                        .scaleEffect(x: -1, y: 1)
+                        .offset(x: 50, y: 3)
+                        .accessibilityHidden(true)
+                }
+                .overlay(alignment: .topLeading) {
+                    Image("vogue_ic_sparkle")
+                        .resizable()
+                        .frame(width: 11, height: 11)
+                        .offset(x: 48, y: 5)
+                        .accessibilityHidden(true)
+                }
+                .background(LinearGradient(stops: [.init(color: Color(hex: 0x1E1E20), location: 0.01),
+                                                   .init(color: Color(hex: 0x7D7D86), location: 2.2)],
+                                           startPoint: .top, endPoint: .bottom))
+                .clipShape(Capsule())
+                .overlay { Capsule().strokeBorder(.white.opacity(0.5), lineWidth: R.stroke1Px) }
+                .shadow(color: .black.opacity(0.25), radius: 6.5, y: 4)
+                .frame(minHeight: 44)
+                .contentShape(Capsule())
         }
         .buttonStyle(PressableStyle())
         .accessibilityLabel("Virtual try-on")

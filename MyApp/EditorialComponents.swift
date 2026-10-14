@@ -255,7 +255,7 @@ enum NewsCopy {
 
     static let entries: [String: Entry] = [
         "Homegrown & unfiltered": Entry(kicker: "CULTURE",
-            deck: "Five homegrown labels, the hands behind them, and the shops in your district where you can see the work up close."),
+            deck: "Six homegrown labels, the hands behind them, and the shops in your district where you can see the work up close."),
         "Hot off the rack": Entry(kicker: "NEW IN",
             deck: "This week leans warm: golds, cocoa browns and washed denim that already looks lived in. Every piece is on a shelf near you."),
         "What goes well with?": Entry(kicker: "STYLE",
@@ -500,11 +500,12 @@ struct HotspotPin: View {
         Button(action: action) {
             ZStack {
                 if !reduceMotion && !isActive {
+                    // The dot's pulse is smaller and shorter-reaching than the tag's.
                     Circle()
                         .stroke(M.iconWhite, lineWidth: R.stroke1Px)
-                        .frame(width: 28, height: 28)
+                        .frame(width: dot ? 18 : 28, height: dot ? 18 : 28)
                         .phaseAnimator([false, true]) { ring, expanded in
-                            ring.scaleEffect(expanded ? 1.8 : 1).opacity(expanded ? 0 : 1)
+                            ring.scaleEffect(expanded ? (dot ? 1.5 : 1.8) : 1).opacity(expanded ? 0 : 1)
                         } animation: { expanded in
                             expanded ? .easeOut(duration: 1.6) : .linear(duration: 0)
                         }
@@ -512,10 +513,10 @@ struct HotspotPin: View {
                 if dot {
                     Circle()
                         .fill(M.iconWhite)
-                        .frame(width: 12, height: 12)
+                        .frame(width: 8, height: 8)
                         .overlay { Circle().strokeBorder(.black.opacity(0.15), lineWidth: R.stroke1Px) }
-                        .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
-                        .padding(8)
+                        .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
+                        .padding(5)
                         .background(Circle().fill(M.iconWhite.opacity(0.25)))
                 } else {
                     Color.clear

@@ -34,6 +34,8 @@ struct Story: Identifiable {
     let mark: String
     let title: String
     let art: Art
+    /// A bundled clip (file name without extension, .mp4) that plays on the story's card in place of `art`.
+    var video: String? = nil
 }
 
 /// Long-form brand story shown in the reader.
@@ -198,6 +200,8 @@ struct Palette: Identifiable {
 
 enum EditorialData {
     static let stories: [Story] = [
+        Story(brand: "Galli", mark: "GALLI", title: "Where the lane wears gold",
+              art: Art("story_galli", [0x1E1A14, 0x6B4A2A, 0xC9A46A], symbol: "sparkles", seed: 7), video: "galli_story"),
         Story(brand: "Gully Labs", mark: "गली\nLABS", title: "Every stitch, still by hand",
               art: Art("story_gully_labs", [0x2A1408, 0x7A3E16, 0xC7853F], symbol: "scissors", seed: 11)),
         Story(brand: "Cord", mark: "CORD", title: "What ties a look together",
@@ -213,6 +217,20 @@ enum EditorialData {
     // Placeholder editorial copy. Written to be brand-safe (no invented founders, dates or quotes);
     // replace with commissioned stories before release.
     static let articles: [String: StoryArticle] = [
+        "Galli": StoryArticle(
+            dek: "Hand-worked shine, worn the way the lanes wear it: loud, easy and a little bit regal.",
+            readTime: "3 min read",
+            lede: "Galli means lane, and this shoot never leaves one: shop signs overhead, a rickshaw for a throne, and a look that turns the street into a runway.",
+            blocks: [
+                .paragraph("A beaded cropped jacket meets wide dark denim and glossy platform loafers, then gets piled with heirloom-style jewellery: layered chokers, a long pendant chain, rings on every other finger."),
+                .heading("Carried like it belongs here"),
+                .paragraph("The bag does the talking: a sequinned top-handle, held as casually as a grocery tote. It is the kind of styling that makes old-world craft feel like today."),
+                .paragraph("Find the label at galli.co.in."),
+            ],
+            shop: [],
+            storeArea: "Gurugram",
+            storeHours: "Open today"
+        ),
         "Gully Labs": StoryArticle(
             dek: "A sneaker label that still believes the best tool in the workshop is a pair of hands.",
             readTime: "6 min read",
@@ -333,6 +351,27 @@ enum EditorialData {
     }
 
     static let productDetails: [String: ProductDetail] = [
+        "Cable-knit sweater vest": ProductDetail(
+            description: "A cream cable-knit vest with a sporty tipped V-neck. Throw it over a shirt or wear it on its own with wide trousers.",
+            material: "Cotton blend knit", fit: "Relaxed, hip length", care: "Hand wash cold, dry flat"),
+        "Gingham check overcoat": ProductDetail(
+            description: "A long, boxy overcoat in bold black-and-white gingham. Pair it with dark denim and shades for instant street style.",
+            material: "Wool blend", fit: "Oversized, knee length", care: "Dry clean only"),
+        "Denim trench coat": ProductDetail(
+            description: "The trench, reworked in mid-wash denim with a belted waist. Wear it open over a knit or cinched as a dress.",
+            material: "100% cotton denim", fit: "Relaxed, mid-calf length", care: "Machine wash cold, inside out"),
+        "Pleated wide-leg trousers": ProductDetail(
+            description: "High-rise cream trousers with sharp front pleats and a puddle hem. Dress them up or down.",
+            material: "Viscose blend", fit: "High rise, wide leg", care: "Machine wash cold"),
+        "Satin waistcoat & shorts set": ProductDetail(
+            description: "A silver satin waistcoat over a crisp shirt with tailored shorts. A loud set that also works as separates.",
+            material: "Satin, cotton shirting", fit: "Tailored waistcoat, knee-length shorts", care: "Dry clean recommended"),
+        "Zip track top & parachute pants": ProductDetail(
+            description: "A fitted zip-up track top over slouchy grey parachute pants, finished with a cap. Gym to brunch, no change needed.",
+            material: "Recycled polyester, nylon", fit: "Slim top, baggy pants", care: "Machine wash cold"),
+        "Washed utility jumpsuit": ProductDetail(
+            description: "A washed grey jumpsuit with a cinched waist and wide legs. One piece, done.",
+            material: "Cotton twill", fit: "Belted waist, wide leg", care: "Machine wash cold"),
         "Cocoa fit-and-flare dress": ProductDetail(
             description: "A sleeveless mini with a fitted, seamed bodice and a full skirt, in a deep cocoa brown.",
             material: "Cotton blend", fit: "Fitted bodice, flared skirt", care: "Machine wash cold"),
@@ -372,6 +411,26 @@ enum EditorialData {
         "H&M": "Cyberhub, DLF Phase 2", "adidas": "Ambience Mall", "Zara": "Cyberhub, DLF Phase 2",
         "Blu": "Galleria Market", "Nicobar": "Ambience Mall", "Snitch": "Sector 29",
         "Bonkers Corner": "Cyberhub, DLF Phase 2", "The Souled Store": "Galleria Market",
+    ]
+
+    /// The Explore tab's "Hot off the rack": street-styled looks rather than studio shots.
+    static let rackEdit: [Product] = [
+        Product(name: "Cable-knit sweater vest", brand: "H&M", mark: "H&M",
+                category: "Knitwear", isNew: true, art: Art("vogue_rack_sweater_vest", [0xE9E2D4, 0x6A8CC8, 0x8A6A4A], seed: 901), price: "₹2,299"),
+        Product(name: "Sunburst track set", brand: "adidas", mark: "adidas",
+                category: "Streetwear", isNew: true, art: Art("rack_adidas_popper", [0xB97A22, 0xE5AC48, 0xF5E2B6], symbol: "figure.walk", seed: 5), price: "₹7,999"),
+        Product(name: "Gingham check overcoat", brand: "Zara", mark: "ZARA",
+                category: "Outerwear", isNew: true, art: Art("look_parisian_edge", [0x2A1A14, 0x9C6B4F, 0xE9E2D4], seed: 902), price: "₹6,990"),
+        Product(name: "Satin waistcoat & shorts set", brand: "Snitch", mark: "SNI\nTCH",
+                category: "Co-ords", isNew: true, art: Art("palette_midnight-olive_4", [0xC8402F, 0x9A9A9A, 0x2A2A2A], seed: 903), price: "₹3,299"),
+        Product(name: "Denim trench coat", brand: "Blu", mark: "blu",
+                category: "Denim", isNew: false, art: Art("palette_butter-denim_5", [0x86B6DE, 0x5D7FA6, 0xD8CFC2], seed: 904), price: "₹3,499"),
+        Product(name: "Zip track top & parachute pants", brand: "The Souled Store", mark: "TSS",
+                category: "Streetwear", isNew: true, art: Art("vogue_fit_active", [0x1A1A1A, 0x9A9A9A, 0xE9E9E9], seed: 905), price: "₹2,499"),
+        Product(name: "Pleated wide-leg trousers", brand: "Bonkers Corner", mark: "BNKR",
+                category: "Trousers", isNew: false, art: Art("palette_rose-clay_3", [0x5E2635, 0xEEE8DC, 0x3B241D], seed: 906), price: "₹1,899"),
+        Product(name: "Washed utility jumpsuit", brand: "Nicobar", mark: "NICO\nBAR",
+                category: "Jumpsuits", isNew: false, art: Art("palette_slate-noir_1", [0x6E6E73, 0x2A2A2D, 0xBDBDC2], seed: 907), price: "₹4,250"),
     ]
 
     static let products: [Product] = [
@@ -585,8 +644,8 @@ enum EditorialData {
 
     static let palettes: [Palette] = [
         // Shades sampled from each palette's flat-lay (vibe_palette_<id>), lead garment first.
-        Palette(id: "butter-denim", name: "Butter & Denim", hexes: [0xF1E6A2, 0x9DB3CC, 0xA17A57],
-                shades: ["Butter", "Denim", "Straw"]),
+        Palette(id: "butter-denim", name: "Butter & Denim", hexes: [0x5C3A1E, 0xF6E27A, 0x86B6DE],
+                shades: ["Cocoa", "Butter", "Denim"]),
         Palette(id: "slate-noir", name: "Rust & Indigo", hexes: [0x974322, 0x1E2B45, 0x9C8467],
                 shades: ["Rust", "Indigo", "Suede"]),
         Palette(id: "midnight-olive", name: "Olive & Cocoa", hexes: [0x7F8B4E, 0xEDE3D6, 0x443025, 0x5A1F22],

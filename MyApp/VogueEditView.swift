@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 private typealias M = BackstageTokens.Mapped
 private typealias R = BackstageTokens.Responsive
@@ -38,9 +39,9 @@ struct VogueEditView: View {
                     VogueRackSection()
                         .stackedPage(pinTop: pinTop, backdrop: .wash(Color(hex: 0xA5A5AC).opacity(0.1))).page(2, into: $pageTops)
                     VoguePairSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(3, into: $pageTops)
-                    VogueLooksSection().stackedPage(pinTop: pinTop, backdrop: .wash(Color(hex: 0xF9B3EB).opacity(0.07))).page(4, into: $pageTops)
+                    VogueLooksSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(4, into: $pageTops)
                     VoguePlansSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(5, into: $pageTops)
-                    VogueBentoSection().stackedPage(pinTop: pinTop, backdrop: .wash(Color(hex: 0xBCAEFE).opacity(0.08))).page(6, into: $pageTops)
+                    VogueBentoSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(6, into: $pageTops)
                     VoguePaletteSection()
                         .stackedPage(pinTop: pinTop, backdrop: .bloom(EditorialData.palettes.compactMap { $0.hexes.first }))
                         .page(7, into: $pageTops)
@@ -170,7 +171,7 @@ enum EditType {
     }
 
     enum SansWeight: String { case light = "Light", regular = "Regular", medium = "Medium", semibold = "SemiBold" }
-    enum TextWeight: String { case regular = "Regular", medium = "Medium" }
+    enum TextWeight: String { case regular = "Regular", medium = "Medium", semibold = "SemiBold" }
 }
 
 /// One rhythm for the whole page.
@@ -211,7 +212,7 @@ private struct EditSectionHeader: View {
                                                         startPoint: .top, endPoint: .bottom))
                         .accessibilityHidden(true)
                     title
-                        .font(EditType.display(28, bold: true))
+                        .font(EditType.display(28))
                         .tracking(-0.84)
                         .foregroundStyle(M.textWhite)
                         .multilineTextAlignment(centered ? .center : .leading)
@@ -222,7 +223,8 @@ private struct EditSectionHeader: View {
             }
             .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
             .overlay(alignment: .topTrailing) {
-                if genderSwitch { GenderSwitch().padding(.top, 6) }
+                // Level with the headline, as in the Figma.
+                if genderSwitch { GenderSwitch().padding(.top, 22) }
             }
             if rule { EditRule() }
         }
@@ -231,8 +233,8 @@ private struct EditSectionHeader: View {
     }
 }
 
-/// Women / Men, as a small segmented pill. One choice shared by every section that shows it.
-/// Design only for now: the sections show the same edit either way.
+/// women / men, as a small segmented pill (Figma: lowercase Body 3 on surface/secondary). One
+/// choice shared by every section that shows it. Design only for now: the edit is the same.
 private struct GenderSwitch: View {
     @AppStorage("edit.gender") private var gender = "women"
     @Namespace private var pill
@@ -247,11 +249,11 @@ private struct GenderSwitch: View {
                 Button {
                     withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85)) { gender = id }
                 } label: {
-                    Text(label)
-                        .font(EditType.text(12, .medium, relativeTo: .caption))
-                        .foregroundStyle(on ? M.textInverse : M.textSecondary)
-                        .padding(.horizontal, 12)
-                        .frame(height: 28)
+                    Text(id)
+                        .font(EditType.text(12, relativeTo: .caption))
+                        .foregroundStyle(on ? M.textInverse : M.textTertiary)
+                        .padding(.horizontal, R.spacingSpace8)
+                        .frame(height: 26)
                         .background {
                             if on { Capsule().fill(M.surfaceInverse).matchedGeometryEffect(id: "pill", in: pill) }
                         }
@@ -263,12 +265,12 @@ private struct GenderSwitch: View {
                 .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
             }
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 1)
         .background {
             Capsule()
-                .fill(M.surfaceTransparent)
+                .fill(M.surfaceSecondary)
                 .overlay { Capsule().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
-                .frame(height: 32)
+                .frame(height: 28)
         }
         .sensoryFeedback(.selection, trigger: gender)
         .accessibilityElement(children: .contain)
@@ -649,8 +651,11 @@ private struct VoguePhotoCard<Caption: View>: View {
     var tint: Double = 0.8
     /// Blurs the photo under the caption, as the Figma's caption frost does.
     var frosted = true
+    /// A bundled .mp4 that plays muted on a loop over `art` (which stays as its poster).
+    var video: String? = nil
     @ViewBuilder let caption: () -> Caption
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let wash = DominantColor.foot(of: art)
@@ -658,7 +663,14 @@ private struct VoguePhotoCard<Caption: View>: View {
         ArtView(art: art)
             .frame(width: width, height: height)
             .overlay {
-                if frosted && !reduceTransparency {
+                // Reduce Motion keeps the still poster.
+                if let video, !reduceMotion {
+                    LoopingVideo(name: video).frame(width: width, height: height).allowsHitTesting(false)
+                }
+            }
+            .overlay {
+                // The frost blurs a still, so it would sit wrong under a moving clip.
+                if frosted && video == nil && !reduceTransparency {
                     ArtView(art: art)
                         .frame(width: width, height: height)
                         .blur(radius: 10, opaque: true)
@@ -682,6 +694,44 @@ private struct VoguePhotoCard<Caption: View>: View {
             .overlay { Rectangle().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
             .clipShape(Rectangle())
             .contentShape(Rectangle())
+    }
+}
+
+/// A bundled clip filling its frame: muted, looping, and paused while off screen.
+private struct LoopingVideo: UIViewRepresentable {
+    let name: String
+
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        guard let url = Bundle.main.url(forResource: name, withExtension: "mp4") else { return view }
+        let player = AVQueuePlayer()
+        player.isMuted = true
+        player.preventsDisplaySleepDuringVideoPlayback = false
+        context.coordinator.looper = AVPlayerLooper(player: player, templateItem: AVPlayerItem(url: url))
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspectFill
+        player.play()
+        return view
+    }
+
+    func updateUIView(_ view: PlayerView, context: Context) {}
+
+    static func dismantleUIView(_ view: PlayerView, coordinator: Coordinator) {
+        view.playerLayer.player?.pause()
+        coordinator.looper = nil
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var looper: AVPlayerLooper? }
+
+    final class PlayerView: UIView {
+        override static var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            if window == nil { playerLayer.player?.pause() } else { playerLayer.player?.play() }
+        }
     }
 }
 
@@ -791,11 +841,11 @@ private struct VogueStoriesSection: View {
         VStack(alignment: .leading, spacing: R.spacingSpace16) {
             VStack(alignment: .leading, spacing: R.spacingSpace4) {
                 Text("The Edit")
-                    .font(EditType.display(40, bold: true, relativeTo: .largeTitle))
-                    .tracking(-1.6)
+                    .font(EditType.display(36, bold: true, relativeTo: .largeTitle))
+                    .tracking(-1.44)
                     .foregroundStyle(M.textWhite)
                     .accessibilityAddTraits(.isHeader)
-                EditDek(text: "Five homegrown labels, the hands behind them, and the shops in your district.")
+                EditDek(text: "Six homegrown labels, the hands behind them, and the shops in your district.")
             }
             EditRule(color: M.borderIntense)
         }
@@ -804,7 +854,7 @@ private struct VogueStoriesSection: View {
     }
 
     private func card(_ story: Story) -> some View {
-        VoguePhotoCard(art: story.art, width: 280, height: 420, scrimReach: 0.38) {
+        VoguePhotoCard(art: story.art, width: 270, height: 400, scrimReach: 0.36, video: story.video) {
             VStack(alignment: .leading, spacing: R.spacingSpace12) {
                 VogueKicker(text: story.brand)
                 VStack(alignment: .leading, spacing: R.spacingSpace4) {
@@ -812,30 +862,33 @@ private struct VogueStoriesSection: View {
                         .font(EditType.display(20, relativeTo: .title3))
                         .tracking(-0.6)
                         .foregroundStyle(M.textWhite)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                        .lineLimit(1)
                     Text(story.article.dek)
                         .font(EditType.text(12, relativeTo: .caption))
                         .lineSpacing(3)
                         .foregroundStyle(M.textWhite.opacity(0.7))
-                        .lineLimit(2)
+                        .lineLimit(1)
                         .multilineTextAlignment(.leading)
                 }
             }
             .padding(.horizontal, R.spacingSpace16)
             .padding(.bottom, R.spacingSpace20)
         }
-        // The blog cue: how long the read is, tucked in the top corner.
+        // The blog cue: an open book and the read time, floating on a soft dark glow.
         .overlay(alignment: .topTrailing) {
-            Text(story.article.readTime)
-                .font(EditType.text(11, .medium, relativeTo: .caption2))
-                .tracking(0.4)
-                .foregroundStyle(M.textWhite)
-                .padding(.horizontal, 10)
-                .frame(height: 24)
-                .background(.black.opacity(0.45), in: Capsule())
-                .overlay { Capsule().strokeBorder(.white.opacity(0.18), lineWidth: R.stroke1Px) }
-                .padding(R.spacingSpace12)
+            HStack(spacing: R.spacingSpace8) {
+                Image(systemName: "book").font(.system(size: 13, weight: .regular))
+                Text(story.article.readTime.replacingOccurrences(of: " read", with: "").uppercased())
+                    .font(EditType.text(12, .medium, relativeTo: .caption))
+                    .tracking(1.2)
+            }
+            .foregroundStyle(M.textWhite.opacity(0.75))
+            .shadow(color: .black.opacity(0.25), radius: 3, y: 4)
+            .background {
+                Ellipse().fill(.black.opacity(0.45)).frame(width: 100, height: 25).blur(radius: 12)
+            }
+            .padding(.top, 12)
+            .padding(.trailing, 12)
         }
     }
 }
@@ -844,6 +897,7 @@ private struct VogueStoriesSection: View {
 
 private struct VogueRackSection: View {
     @State private var opened: Product?
+    @State private var tryingOn: Product?
     @State private var index = 0
 
     var body: some View {
@@ -851,12 +905,14 @@ private struct VogueRackSection: View {
             EditSectionHeader(number: 2, title: Text("Hot off the rack"),
                               dek: "Fresh in this week from the labels on your high street, and the stores that stock them.")
             VStack(alignment: .leading, spacing: R.spacingSpace24) {
-                RackCarousel(products: EditorialData.products, index: $index) { opened = $0 }
-                EditProgress(index: index, count: EditorialData.products.count, counter: true)
+                RackCarousel(products: EditorialData.rackEdit, index: $index, open: { opened = $0 }, tryOn: { tryingOn = $0 })
+                EditProgress(index: index, count: EditorialData.rackEdit.count, counter: true)
             }
         }
         .readerCover(item: $opened) { ProductDetailView(product: $0) }
+        .fullScreenCover(item: $tryingOn) { VirtualTryOnView(title: $0.name, art: $0.art) }
         .sensoryFeedback(.selection, trigger: index)
+        .sensoryFeedback(.impact(weight: .medium), trigger: tryingOn?.id)
     }
 }
 
@@ -869,6 +925,7 @@ private struct RackCarousel: View {
     /// The focused product (wrapped into `products`).
     @Binding var index: Int
     let open: (Product) -> Void
+    let tryOn: (Product) -> Void
 
     @State private var page: Int?
     /// The pager's horizontal content offset.
@@ -903,6 +960,7 @@ private struct RackCarousel: View {
                     .accessibilityHint("Double-tap to open. Swipe up or down for the next piece.")
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction { open(product) }
+                    .accessibilityAction(named: "Virtual try-on") { tryOn(product) }
                     .accessibilityAdjustableAction { direction in
                         switch direction {
                         case .increment: scroll(to: focused + 1)
@@ -961,7 +1019,13 @@ private struct RackCarousel: View {
             let r = CGFloat(k) - p
             let s = size(min(1, abs(r)))
             let left = self.x(r)
-            guard x >= left, x <= left + s.width, location.y >= large.height - s.height else { continue }
+            let top = large.height - s.height
+            guard x >= left, x <= left + s.width, location.y >= top else { continue }
+            // The front card's TryOn! pill (drawn in `card`, 10pt in from the top-right).
+            if k == focused, x >= left + s.width - 10 - 77 - 6, x <= left + s.width - 4,
+               location.y <= top + 10 + 26 + 8 {
+                tryOn(products[wrap(k)]); return
+            }
             if k == focused { open(products[wrap(k)]) } else { scroll(to: k) }
             return
         }
@@ -991,14 +1055,33 @@ private struct RackCarousel: View {
                        scrimReach: 0.3, shade: 0.75, tint: 1, frosted: false) {
             VStack(alignment: .leading, spacing: lerp(6, 8, emphasis)) {
                 VogueKicker(text: product.brand, rule: Double(1 - emphasis))
-                Text(product.name)
-                    .font(EditType.display(lerp(16, 18, emphasis), relativeTo: .headline))
-                    .tracking(-0.54)
-                    .foregroundStyle(M.textWhite)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(product.name)
+                        .font(EditType.text(lerp(16, 18, emphasis), .semibold, relativeTo: .headline))
+                        .tracking(lerp(-0.16, -0.18, emphasis))
+                        .foregroundStyle(M.textWhite)
+                        .lineLimit(1)
+                    // Only the card in front carries a line of description.
+                    if emphasis > 0.5 {
+                        Text("\(product.category) · \(product.price) onwards")
+                            .font(EditType.text(11, relativeTo: .caption2))
+                            .foregroundStyle(M.textWhite.opacity(0.7))
+                            .lineLimit(1)
+                            .opacity(Double((emphasis - 0.5) * 2))
+                    }
+                }
             }
             .padding(.horizontal, lerp(12, 16, emphasis))
             .padding(.bottom, R.spacingSpace16)
+        }
+        // Drawn only: the pager on top catches the tap and routes it (see `tap(at:)`).
+        .overlay(alignment: .topTrailing) {
+            // The button's 44pt frame centres the 26pt pill, so 1pt here puts the pill 10pt down.
+            TryOnButton {}
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .padding(.top, 1)
+                .padding(.trailing, 10)
         }
         // The waiting cards sit back a touch so the tall one reads as "in front".
         .brightness(-0.12 * (1 - emphasis))
@@ -1043,17 +1126,6 @@ private struct VoguePairSection: View {
         let name: String
         let cutout: String
         let staple: Staple
-        /// The one cheeky line written on the polaroid under the piece.
-        var quip: String { Self.quips[id] ?? "" }
-
-        static let quips: [String: String] = [
-            "jeans": "The everything jeans",
-            "tee": "Never basic",
-            "denim-jacket": "Double denim? Yes.",
-            "blazer": "Meeting energy",
-            "leather": "Main character",
-            "sneakers": "20k steps later",
-        ]
     }
 
     private static var anchors: [Anchor] {
@@ -1065,25 +1137,26 @@ private struct VoguePairSection: View {
                                 pairs: pairs?.pairs ?? [], looks: arts)
             return Anchor(id: id, name: name, cutout: shot, staple: staple)
         }
+        // The six pieces from the Figma. Looks are the closest shots in the catalogue for now.
         return [
-            anchor("jeans", "Light blue jeans", "vogue_pair_jeans",
-                   ["staple_white_tee_6", "look_quiet_luxury", "vogue_look_olive", "photo_rose_6", "plan_office_2", "rack_bonkers_jeans"],
-                   tint: [0x86B6DE, 0x3E5C7E], pairs: denim),
-            anchor("tee", "White tee", "vogue_pair_tee",
-                   ["staple_white_tee_2", "staple_white_tee_3", "staple_white_tee_1", "plan_active_hero", "staple_white_tee_6"],
+            anchor("leathers", "Leathers", "vogue_pair_leathers",
+                   ["vogue_pair_leathers_look_1", "vogue_pair_leathers_look_2", "vogue_pair_leathers_look_3", "vogue_pair_leathers_look_4"],
+                   tint: [0x2B211C, 0x151515], pairs: tee),
+            anchor("graphic-tee", "Never basic tee", "vogue_pair_graphic_tee",
+                   ["staple_white_tee_1", "staple_white_tee_3", "staple_white_tee_2", "plan_active_hero"],
                    tint: [0xF4F4F4, 0xBDBDBD], pairs: tee),
-            anchor("denim-jacket", "Denim jacket", "palette_slate-noir_4",
-                   ["staple_denim_3", "staple_denim_2", "staple_denim_1", "rack_blu_trucker", "palette_butter-denim_5"],
-                   tint: [0x3E5C7E, 0x1E3350], pairs: denim),
-            anchor("blazer", "Tailored blazer", "staple_blazer_2",
-                   ["vogue_look_ivory", "rack_zara_blazer", "staple_blazer_1", "staple_blazer_3", "vogue_fit_office", "vogue_fit_brunch"],
-                   tint: [0xE9E4DA, 0x2A2826], pairs: blazer),
-            anchor("leather", "Leather jacket", "palette_slate-noir_5",
-                   ["rack_snitch_biker", "palette_midnight-olive_3"],
-                   tint: [0x151515, 0x8A5A3B], pairs: tee),
-            anchor("sneakers", "Court sneakers", "palette_butter-denim_6",
-                   ["staple_blazer_3", "plan_active_hero", "staple_denim_1", "palette_sage-linen_5", "palette_butter-denim_3"],
-                   tint: [0xE9E2D4, 0xC49A6C], pairs: denim),
+            anchor("kurti", "OG Kurti", "vogue_pair_kurti",
+                   ["plan_diwali_hero", "rack_nicobar_kaftan", "plan_diwali_2", "plan_diwali_3"],
+                   tint: [0x1A1A1A, 0xE9E2D4], pairs: denim),
+            anchor("black-tee", "Black tee", "vogue_pair_black_tee",
+                   ["photo_rose_6", "plan_concert_hero", "palette_slate-noir_2"],
+                   tint: [0x151515, 0x3E5C7E], pairs: denim),
+            anchor("white-top", "Never basic tee", "vogue_pair_white_top",
+                   ["staple_white_tee_6", "plan_active_hero", "look_quiet_luxury"],
+                   tint: [0xF4F4F4, 0xBDBDBD], pairs: tee),
+            anchor("skort", "That Skort", "vogue_pair_skort",
+                   ["plan_first_date_2", "plan_office_1"],
+                   tint: [0x1E2B45, 0x2A2826], pairs: blazer),
         ]
     }
 
@@ -1094,13 +1167,13 @@ private struct VoguePairSection: View {
         let current = anchors.first { $0.id == selected }
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
             EditSectionHeader(number: 3,
-                              title: Text("What to \(Text("pair").font(EditType.display(28, italic: true, bold: true))) with?"),
-                              dek: "Pick a piece you already own. We'll show you what goes with it.", genderSwitch: true)
+                              title: Text("What to pair with?"),
+                              dek: "Pick a piece you already own. We'll show you what goes with it", genderSwitch: true, rule: false)
             if let current {
                 tabs(anchors, current: current)
                     .transition(.opacity)
                 looks(current)
-                    .genderReload(.row(CGSize(width: 244, height: 320)))
+                    .genderReload(.row(CGSize(width: 228, height: 279)))
                     .id(current.id)
                     .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 28)), removal: .opacity))
             } else {
@@ -1112,7 +1185,7 @@ private struct VoguePairSection: View {
         .sensoryFeedback(.selection, trigger: selected)
         .readerCover(item: $opened) { StapleLookbookView(staple: $0.staple, start: $0.start) }
         #if DEBUG
-        // Debug builds accept `-pairSelect <anchor id>` (jeans, tee, denim-jacket…) to open on its looks.
+        // Debug builds accept `-pairSelect <anchor id>` (leathers, graphic-tee, kurti…) to open on its looks.
         .task {
             let args = ProcessInfo.processInfo.arguments
             if let i = args.firstIndex(of: "-pairSelect"), i + 1 < args.count {
@@ -1132,32 +1205,35 @@ private struct VoguePairSection: View {
 
     // MARK: First view: the pieces on a shelf
 
-    /// Each polaroid leans its own way, like prints pinned to a board.
-    private static let tilts: [Double] = [-2, 1.5, -1, 1.5, -1.5, 2]
+    /// Each polaroid leans its own way, like prints pinned to a board (Figma: -3° / +2°).
+    private static let tilts: [Double] = [-3, 2, -3, 2, -3, 2]
 
     private func shelf(_ anchors: [Anchor]) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: EditLayout.cardGap, alignment: .top), count: 3),
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: R.spacingSpace16, alignment: .top), count: 3),
                   spacing: R.spacingSpace16) {
             ForEach(Array(anchors.enumerated()), id: \.element.id) { i, anchor in
                 Button { choose(anchor.id) } label: {
-                    // The polaroid: the product, and one line written beneath it. Nothing else.
-                    VStack(alignment: .leading, spacing: 6) {
-                        thumb(anchor, corner: 1)
+                    // The polaroid: the product with a soft drop shadow, its name written beneath.
+                    ZStack(alignment: .topLeading) {
+                        M.surfaceInverse
+                        thumb(anchor, corner: 0)
                             .matchedGeometryEffect(id: "img-\(anchor.id)", in: sku)
-                            .frame(height: 118)
-                        Text(anchor.quip)
-                            .font(EditType.display(12, italic: true, relativeTo: .caption))
-                            .foregroundStyle(Color(hex: 0x1C1C1E))
+                            .frame(width: 94, height: 117)
+                            .shadow(color: .black.opacity(0.25), radius: 2, x: 5, y: 2)
+                            .padding(.top, 2)
+                            .padding(.leading, 3)
+                        Text(anchor.name)
+                            .font(EditType.text(11, .medium, relativeTo: .caption2))
+                            .foregroundStyle(Color.black)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                            .padding(.horizontal, 2)
+                            .padding(.leading, 6)
+                            .padding(.top, 125)
                     }
-                    .padding(5)
-                    .padding(.bottom, 4)
-                    .background(Color.white)
-                    .shadow(color: .black.opacity(0.35), radius: 6, y: 3)
+                    .frame(width: 100, height: 145)
+                    .clipped()
                     .modifier(Wiggle(tilt: Self.tilts[i % Self.tilts.count], order: i))
                     .slideIn(i)
+                    .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PressableStyle())
@@ -1182,16 +1258,19 @@ private struct VoguePairSection: View {
 
     // MARK: Second view: tabs and looks
 
+    /// Figma 7485:6464: a grid button, then one pill per piece (round thumb + name). The chosen
+    /// pill is inverse; the rest sit on surface/secondary with no stroke.
     private func tabs(_ anchors: [Anchor], current: Anchor) -> some View {
         ScrollView(.horizontal) {
             HStack(spacing: R.spacingSpace8) {
                 Button { choose(nil) } label: {
                     Image(systemName: "square.grid.2x2")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 17, weight: .regular))
                         .foregroundStyle(M.iconPrimary)
-                        .frame(width: 44, height: 44)
-                        .background(M.surfaceTransparent, in: Circle())
-                        .overlay { Circle().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
+                        .frame(width: 40, height: 40)
+                        .background(M.surfaceSecondary, in: Circle())
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("All pieces")
@@ -1200,20 +1279,20 @@ private struct VoguePairSection: View {
                     let on = anchor.id == current.id
                     Button { if !on { choose(anchor.id) } } label: {
                         HStack(spacing: R.spacingSpace8) {
-                            thumb(anchor, corner: 15)
+                            thumb(anchor, corner: 16)
                                 .matchedGeometryEffect(id: "img-\(anchor.id)", in: sku)
-                                .frame(width: 30, height: 30)
+                                .frame(width: 32, height: 32)
                             Text(anchor.name)
-                                .font(EditType.text(12, .medium, relativeTo: .caption))
-                                .foregroundStyle(on ? M.textInverse : M.textPrimary)
+                                .font(EditType.text(14, .medium, relativeTo: .subheadline))
+                                .foregroundStyle(on ? M.borderCardBorderSurfacePrimary : M.textWhite)
                                 .lineLimit(1)
                                 .fixedSize()
                         }
-                        .padding(.leading, 7)
-                        .padding(.trailing, R.spacingSpace16)
-                        .frame(height: 44)
-                        .background(on ? AnyShapeStyle(M.surfaceInverse) : AnyShapeStyle(M.surfaceTransparent), in: Capsule())
-                        .overlay { Capsule().strokeBorder(on ? .clear : M.borderModerate, lineWidth: R.stroke1Px) }
+                        .padding(.leading, 4)
+                        .padding(.trailing, 10)
+                        .frame(height: 40)
+                        .background(on ? M.surfaceInverse : M.surfaceSecondary, in: Capsule())
+                        .frame(minHeight: 44)
                         .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -1233,12 +1312,12 @@ private struct VoguePairSection: View {
                 LazyHStack(spacing: EditLayout.cardGap) {
                     ForEach(Array(staple.looks.enumerated()), id: \.offset) { i, look in
                         Button { opened = Opened(id: "\(anchor.id)-\(i)", staple: staple, start: i) } label: {
-                            PairLookCard(art: look, number: i + 1, piece: anchor.name)
+                            PairLookCard(art: look, title: PairLookCard.names[look.image ?? ""] ?? "With the \(anchor.name.lowercased())")
                         }
                         .slideIn(i)
                         .buttonStyle(PressableStyle())
                         .id(i)
-                        .accessibilityLabel("Look \(i + 1) with the \(anchor.name.lowercased())")
+                        .accessibilityLabel(PairLookCard.names[look.image ?? ""] ?? "Look \(i + 1) with the \(anchor.name.lowercased())")
                         .accessibilityHint("Opens the lookbook")
                     }
                 }
@@ -1287,30 +1366,29 @@ private struct Wiggle: ViewModifier {
     }
 }
 
-/// One look built on the chosen piece: the photo leads, with only its number and the piece.
+/// One look built on the chosen piece (Figma 7485:6478): the photo, a black fade at the foot and
+/// the look's name in Be Vietnam SemiBold 16.
 private struct PairLookCard: View {
     let art: Art
-    let number: Int
-    let piece: String
+    let title: String
+
+    /// Names for looks that have one; others fall back to "With the <piece>".
+    static let names: [String: String] = [
+        "vogue_pair_leathers_look_1": "Pinstripe & leather",
+        "vogue_pair_leathers_look_2": "Leather bustier dress",
+        "vogue_pair_leathers_look_3": "Chocolate leather wide-legs",
+        "vogue_pair_leathers_look_4": "Stripes over leather",
+    ]
 
     var body: some View {
-        VoguePhotoCard(art: art, width: 244, height: 320, scrimReach: 0.26) {
-            HStack(alignment: .lastTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    VogueKicker(text: "Look \(String(format: "%02d", number))", rule: 0)
-                    Text("With the \(piece.lowercased())")
-                        .font(EditType.display(16, relativeTo: .headline))
-                        .tracking(-0.3)
-                        .foregroundStyle(M.textPrimary)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: R.spacingSpace8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(M.textWhite.opacity(0.8))
-            }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 14)
+        VoguePhotoCard(art: art, width: 228, height: 279, scrimReach: 0.3, shade: 0.75, tint: 0, frosted: false) {
+            Text(title)
+                .font(EditType.text(16, .semibold, relativeTo: .headline))
+                .tracking(-0.16)
+                .foregroundStyle(M.textWhite)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 16)
         }
     }
 }
@@ -1320,22 +1398,24 @@ private struct PairLookCard: View {
 private struct VogueLooksSection: View {
     @State private var visible: String?
 
-    /// Street-style looks from the Figma shoot, each tagged with what she's wearing.
+    /// Street-style looks from the Figma, each tagged where the Figma puts its dots.
     static let looks: [Look] = [
-        Look(title: "The Olive Utility", art: Art("vogue_look_olive", [0x4A5A2A, 0x8A9A5A, 0x9FB6C9], seed: 801), spots: [
-            Hotspot(x: 0.62, y: 0.4, item: "Olive utility jacket", price: "₹4,990"),
-            Hotspot(x: 0.27, y: 0.37, item: "Mini box bag", price: "₹2,950"),
-            Hotspot(x: 0.48, y: 0.76, item: "Light-wash mom jeans", price: "₹2,450"),
+        Look(title: "Oranges and skaters", art: Art("vogue_look_oranges", [0xAD230A, 0xE0572A, 0x8A8A8A], seed: 811), spots: [
+            Hotspot(x: 0.57, y: 0.22, item: "Black oval sunglasses", price: "₹1,290"),
+            Hotspot(x: 0.61, y: 0.55, item: "Black shoulder bag", price: "₹2,450"),
+            Hotspot(x: 0.51, y: 0.76, item: "Striped varsity jersey", price: "₹2,999"),
         ]),
-        Look(title: "The Ivory Suit", art: Art("vogue_look_ivory", [0xE9E2D4, 0xC9B79A, 0x5A5F66], seed: 803), spots: [
-            Hotspot(x: 0.6, y: 0.38, item: "Cream tailored blazer", price: "₹5,490"),
-            Hotspot(x: 0.3, y: 0.36, item: "Mini box bag", price: "₹2,950"),
-            Hotspot(x: 0.52, y: 0.74, item: "Ivory wide-leg trousers", price: "₹3,290"),
+        Look(title: "Formal greens", art: Art("vogue_look_greens", [0x463904, 0x5A5A1E, 0x7A1A22], seed: 813), spots: [
+            Hotspot(x: 0.33, y: 0.12, item: "Olive NY baseball cap", price: "₹1,999"),
+            Hotspot(x: 0.67, y: 0.18, item: "Black shield sunglasses", price: "₹1,490"),
+            Hotspot(x: 0.52, y: 0.55, item: "Burgundy silk tie", price: "₹1,190"),
+            Hotspot(x: 0.79, y: 0.48, item: "Olive oversized blazer", price: "₹5,990"),
+            Hotspot(x: 0.71, y: 0.75, item: "Burgundy mini bag", price: "₹3,290"),
         ]),
-        Look(title: "The Navy Overcoat", art: Art("vogue_look_navy", [0x1A2238, 0x2F3E4E, 0xC9B79A], seed: 805), spots: [
-            Hotspot(x: 0.64, y: 0.5, item: "Navy double-breasted coat", price: "₹8,990"),
-            Hotspot(x: 0.5, y: 0.36, item: "Cable-knit vest", price: "₹2,890"),
-            Hotspot(x: 0.5, y: 0.8, item: "Charcoal straight trousers", price: "₹3,490"),
+        Look(title: "On the run", art: Art("vogue_look_run", [0x335358, 0x1E4A5A, 0xC8C8C8], seed: 815), spots: [
+            Hotspot(x: 0.68, y: 0.11, item: "Teal running cap", price: "₹1,290"),
+            Hotspot(x: 0.77, y: 0.48, item: "Colour-block track jacket", price: "₹4,490"),
+            Hotspot(x: 0.77, y: 0.84, item: "Black track pants", price: "₹2,690"),
         ]),
     ]
 
@@ -1352,7 +1432,7 @@ private struct VogueLooksSection: View {
                 .scrollTargetLayout()
             }
             .carousel()
-            .genderReload(.row(CGSize(width: 268, height: 420)))
+            .genderReload(.row(CGSize(width: 270, height: 400)))
             .defaultScrollAnchor(.leading)
             .scrollPosition(id: $visible, anchor: .leading)
 
@@ -1369,11 +1449,11 @@ private struct VogueLookCard: View {
     struct Shopping: Identifiable { let id: Int }
 
     var body: some View {
-        VoguePhotoCard(art: look.art, width: 268, height: 420, scrimReach: 0.22) {
+        VoguePhotoCard(art: look.art, width: 270, height: 400, scrimReach: 0.3, shade: 0.75, tint: 0.7, frosted: false) {
             VStack(alignment: .leading, spacing: R.spacingSpace8) {
                 // Wraps to a second line rather than truncating a long outfit name.
                 Text(look.title)
-                    .font(EditType.display(18, relativeTo: .headline))
+                    .font(EditType.text(18, .semibold, relativeTo: .headline))
                     .tracking(-0.18)
                     .foregroundStyle(M.textPrimary)
                     .lineLimit(2)
@@ -1405,7 +1485,8 @@ private struct VogueLookCard: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            TryOnButton { tryingOn = true }.padding(R.spacingSpace12)
+            // Figma: 10pt in from the top-right corner (the 44pt tap frame adds 9pt above).
+            TryOnButton { tryingOn = true }.padding(.top, 3).padding(.trailing, 10)
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .sensoryFeedback(.impact(weight: .light), trigger: shopping?.id)
@@ -1428,8 +1509,8 @@ private struct VoguePlansSection: View {
     private var covers: [(plan: Plan, cover: Art)] {
         // Vibe first: each plan opens on an illustration of the occasion, not an outfit.
         let pairs: [(String, String)] = [
-            ("Sunday brunch", "vibe_brunch"), ("Activewear", "vibe_active"),
-            ("Diwali parties", "vibe_diwali"), ("Concert night", "vibe_concert"),
+            ("Sunday brunch", "vibe_plan_brunch"), ("Activewear", "vibe_plan_workout"),
+            ("Diwali parties", "vibe_plan_diwali"), ("Date night", "vibe_plan_date"),
         ]
         return pairs.compactMap { title, image in
             guard let plan = EditorialData.plans.first(where: { $0.title == title }) else { return nil }
@@ -1441,9 +1522,11 @@ private struct VoguePlansSection: View {
         let covers = covers
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
             EditSectionHeader(number: 5,
-                              title: Text("Every plan, \(Text("sorted.").font(EditType.display(28, italic: true, bold: true)))"), genderSwitch: true)
+                              title: Text("Fits for every plan"),
+                              dek: "Fresh in this week from the labels on your high street",
+                              genderSwitch: true, rule: false)
             ScrollView(.horizontal) {
-                LazyHStack(spacing: R.spacingSpace16) {
+                LazyHStack(spacing: EditLayout.cardGap) {
                     ForEach(covers, id: \.plan.id) { item in
                         Button { opened = item.plan } label: { PlanCard(plan: item.plan, cover: item.cover) }
                             .buttonStyle(PressableStyle())
@@ -1457,7 +1540,7 @@ private struct VoguePlansSection: View {
                 .scrollTargetLayout()
             }
             .carousel()
-            .genderReload(.row(CGSize(width: 268, height: 380)))
+            .genderReload(.row(CGSize(width: 234, height: 228)))
             .defaultScrollAnchor(.leading)
             .scrollPosition(id: $visible, anchor: .leading)
 
@@ -1470,67 +1553,56 @@ private struct VoguePlansSection: View {
     }
 }
 
-/// One plan: just its vibe illustration, veiled all over in the illustration's own colour,
-/// with the plan's name set in the top-left corner.
+/// One plan: its vibe shot, lightly washed in the plan's colour, with the colour rising from
+/// the foot under the plan's name and its line (Figma 7431:4643).
 private struct PlanCard: View {
     let plan: Plan
     let cover: Art
 
-    static let width: CGFloat = 268
-    static let height: CGFloat = 380
-    /// Spacing shared with the palette cards.
-    static let gap: CGFloat = 5
+    static let width: CGFloat = 234
+    static let height: CGFloat = 228
 
-    /// One line on what each plan is dressed for.
-    static let taglines: [String: String] = [
-        "Sunday brunch": "Florals, linen and a long table",
-        "Activewear": "Sweat first, coffee after",
-        "Diwali parties": "Gold, silk and a little sparkle",
-        "Concert night": "Black, loud and front row",
+    /// What each plan is called on its card, its line, and the colour that washes it.
+    static let styles: [String: (name: String, line: String, tint: UInt32, foot: Double, veil: Double)] = [
+        "Sunday brunch": ("Sunday brunches", "Florals, linen and a long table", 0x6F9770, 1, 0.2),
+        "Activewear": ("Workout edits", "Sweat first, coffee after", 0x677752, 1, 0.2),
+        "Diwali parties": ("Diwali outfits", "Gold, silk & a little sparkle", 0xF7423A, 0.6, 0.2),
+        "Date night": ("Date nights", "Bold, loud and front row", 0x5D454F, 1, 0),
     ]
 
     var body: some View {
-        let wash = DominantColor.head(of: cover)
+        let style = Self.styles[plan.title] ?? (plan.title, "", 0x333333, 1, 0)
+        let tint = Color(hex: style.tint)
         ArtView(art: cover)
             .frame(width: Self.width, height: Self.height)
             .clipped()
-            .overlay {
+            .overlay { tint.opacity(style.veil).allowsHitTesting(false) }
+            .overlay(alignment: .bottom) {
                 ZStack {
-                    // A touch of black under the colour keeps white type legible on pale art.
-                    LinearGradient(stops: [.init(color: .black.opacity(0.35), location: 0), .init(color: .clear, location: 0.4)],
+                    LinearGradient(stops: [.init(color: tint.opacity(0), location: 0), .init(color: tint.opacity(style.foot), location: 1)],
                                    startPoint: .top, endPoint: .bottom)
-                    // The colour veils the whole card: strong behind the type at the top, fading out
-                    // toward the foot.
-                    LinearGradient(stops: [.init(color: wash.opacity(0.96), location: 0),
-                                           .init(color: wash.opacity(0.7), location: 0.4),
-                                           .init(color: wash.opacity(0.12), location: 1)],
-                                   startPoint: .top, endPoint: .bottom)
-                    // A soft shade at the foot for the looks count.
-                    LinearGradient(stops: [.init(color: .clear, location: 0.75), .init(color: .black.opacity(0.45), location: 1)],
+                    LinearGradient(stops: [.init(color: .black.opacity(0), location: 0),
+                                           .init(color: .black.opacity(0.516), location: 0.36),
+                                           .init(color: .black.opacity(0.6), location: 1)],
                                    startPoint: .top, endPoint: .bottom)
                 }
+                .frame(height: 164)
                 .allowsHitTesting(false)
             }
-            .overlay(alignment: .topLeading) {
-                VStack(alignment: .leading, spacing: R.spacingSpace8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(plan.title)
-                            .font(EditType.display(22, bold: true, relativeTo: .title2))
-                            .tracking(-0.6)
-                            .foregroundStyle(M.textWhite)
-                            .lineLimit(1)
-                        if let line = Self.taglines[plan.title] {
-                            Text(line)
-                                .font(EditType.text(12, relativeTo: .caption))
-                                .foregroundStyle(M.textWhite.opacity(0.8))
-                                .lineLimit(1)
-                        }
-                    }
-                }
-                .padding(R.spacingSpace16)
-            }
             .overlay(alignment: .bottomLeading) {
-                VogueKicker(text: "\(plan.count) looks", rule: 0).padding(R.spacingSpace16)
+                VStack(alignment: .leading, spacing: R.spacingSpace8) {
+                    Text(style.name)
+                        .font(EditType.display(20, relativeTo: .title3))
+                        .tracking(-0.6)
+                        .foregroundStyle(M.textPrimary)
+                        .frame(width: 130, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(style.line)
+                        .font(EditType.text(11, relativeTo: .caption2))
+                        .foregroundStyle(M.textWhite.opacity(0.7))
+                        .lineLimit(1)
+                }
+                .padding(10)
             }
             .overlay { Rectangle().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
             .contentShape(Rectangle())
@@ -1547,14 +1619,15 @@ private struct VoguePaletteSection: View {
 
     /// The palettes with a flat-lay, Butter & Denim closing the row.
     private var palettes: [Palette] {
-        let shown = EditorialData.palettes.filter { $0.id != "sage-linen" }
-        return shown.filter { $0.id != "butter-denim" } + shown.filter { $0.id == "butter-denim" }
+        // The Figma's order: Butter & Denim, then Rust & Indigo; the other flat-lays follow.
+        let order = ["butter-denim", "slate-noir", "midnight-olive", "rose-clay"]
+        return order.compactMap { id in EditorialData.palettes.first { $0.id == id } }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
             EditSectionHeader(number: 7,
-                              title: Text("Pick your \(Text("palette").font(EditType.display(28, italic: true, bold: true)))"),
+                              title: Text("Pick your palette"),
                               dek: "Start from a colour, not a garment. Choose a mood and we'll build the outfit around it.", genderSwitch: true, rule: false)
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: R.spacingSpace16) {
@@ -1569,7 +1642,7 @@ private struct VoguePaletteSection: View {
                 .scrollTargetLayout()
             }
             .carousel()
-            .genderReload(.row(CGSize(width: 268, height: 356)))
+            .genderReload(.row(CGSize(width: 268, height: 308)))
             .defaultScrollAnchor(.leading)
         }
         .readerCover(item: $opened) { palette in
@@ -1582,59 +1655,40 @@ private struct VoguePaletteSection: View {
 private struct ColourStoryCard: View {
     let palette: Palette
 
-    static let width = PlanCard.width
-    static let coverHeight: CGFloat = 300
-    static let bandHeight: CGFloat = 56
-    static let gap = PlanCard.gap
+    static let width: CGFloat = 268
+    static let coverHeight: CGFloat = 248
+    static let bandHeight: CGFloat = 60
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Self.gap) {
-            PaletteVibe(palette: palette)
-                .frame(width: Self.width, height: Self.coverHeight)
-                .overlay {
-                    LinearGradient(stops: [.init(color: .clear, location: 0.55), .init(color: .black.opacity(0.6), location: 1)],
-                                   startPoint: .top, endPoint: .bottom)
+        VStack(alignment: .leading, spacing: 0) {
+            VoguePhotoCard(art: Art("vibe_palette_\(palette.id)", palette.hexes, seed: 840), width: Self.width, height: Self.coverHeight,
+                           scrimReach: 0.22, shade: 0.4, tint: 0.8, frosted: false) {
+                HStack(alignment: .firstTextBaseline, spacing: R.spacingSpace8) {
+                    Text(palette.name)
+                        .font(EditType.text(16, .semibold, relativeTo: .headline))
+                        .tracking(-0.16)
+                        .foregroundStyle(M.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text("\(palette.lookCount) looks")
+                        .font(EditType.text(11, .medium, relativeTo: .caption2))
+                        .tracking(1.1)
+                        .textCase(.uppercase)
+                        .foregroundStyle(M.textWhite.opacity(0.7))
                 }
-                .overlay(alignment: .bottomLeading) {
-                    VStack(alignment: .leading, spacing: R.spacingSpace8) {
-                        VogueKicker(text: "\(palette.lookCount) looks")
-                        Text(palette.name)
-                            .font(EditType.display(20, relativeTo: .title3))
-                            .tracking(-0.6)
-                            .foregroundStyle(M.textWhite)
-                            .lineLimit(1)
-                    }
-                    .padding(R.spacingSpace16)
-                }
-                .clipped()
-                .overlay { Rectangle().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
-
-            // Its three lead shades, side by side and named.
+                .padding(11)
+            }
+            // Its three lead shades, side by side.
             HStack(spacing: 0) {
-                ForEach(Array(zip(palette.hexes, palette.shades).prefix(3).enumerated()), id: \.offset) { _, shade in
-                    Color(hex: shade.0)
-                        .overlay(alignment: .bottomLeading) {
-                            Text(shade.1)
-                                .font(EditType.text(11, .medium, relativeTo: .caption2))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                                .foregroundStyle(Self.ink(on: shade.0))
-                                .padding(.horizontal, 10)
-                                .padding(.bottom, 8)
-                        }
+                ForEach(Array(palette.hexes.prefix(3).enumerated()), id: \.offset) { _, hex in
+                    Color(hex: hex)
                 }
             }
             .frame(width: Self.width, height: Self.bandHeight)
-
+            .accessibilityHidden(true)
         }
         .frame(width: Self.width, alignment: .leading)
         .contentShape(Rectangle())
-    }
-
-    /// Dark text on light shades, light text on dark ones (relative luminance).
-    static func ink(on hex: UInt32) -> Color {
-        let r = Double((hex >> 16) & 0xFF), g = Double((hex >> 8) & 0xFF), b = Double(hex & 0xFF)
-        return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? Color.black.opacity(0.75) : Color.white.opacity(0.9)
     }
 }
 
@@ -1705,98 +1759,103 @@ private struct SeededRandom {
 
 // MARK: - 06 Homegrown heroes
 
-/// The district's homegrown labels on a tidy bento board: a big tile and two small ones, then the
-/// mirror of that row, each tile a photo with the label's name set inside it. Story labels open
-/// their story; the rest open their piece on the rack.
+/// The district's homegrown labels on a bento board (Figma 7431:6252): a large tile beside two
+/// stacked small ones, then a tall narrow tile beside another large one, each a photo with the
+/// label's name set inside it. Labels with a story open it; the rest are for show for now.
 private struct VogueBentoSection: View {
     @State private var reading: Story?
-    @State private var opened: Product?
     @Namespace private var zoom
 
     private struct Label: Identifiable {
         let id: String
-        let art: Art
+        let image: String
         let story: Story?
-        let product: Product?
     }
 
-    private static let gap: CGFloat = 8
-    private static let small: CGFloat = 88
-    private static var large: CGFloat { small * 2 + gap }
+    private static let gap: CGFloat = 12
+    private static let rowHeight: CGFloat = 228
 
     private var labels: [Label] {
-        var rows: [Label] = EditorialData.stories.map { Label(id: $0.brand, art: $0.art, story: $0, product: nil) }
-        if let kaftan = EditorialData.products.first(where: { $0.brand == "Nicobar" }) {
-            rows.append(Label(id: "Nicobar", art: kaftan.art, story: nil, product: kaftan))
-        }
-        return rows
+        let stories = Dictionary(uniqueKeysWithValues: EditorialData.stories.map { ($0.brand, $0) })
+        return [
+            Label(id: "Nappa Dori", image: "vogue_brand_nappa", story: stories["Nappa Dori"]),
+            Label(id: "Dhaga", image: "vogue_brand_dhaga", story: nil),
+            Label(id: "Suyari", image: "vogue_brand_dhaga", story: nil),
+            Label(id: "Eenth", image: "vogue_brand_eenth", story: nil),
+            Label(id: "Gully labs", image: "vogue_brand_gully", story: stories["Gully Labs"]),
+        ]
     }
 
     var body: some View {
         let l = labels
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
-            EditSectionHeader(number: 6,
-                              title: Text("Homegrown \(Text("heroes").font(EditType.display(28, italic: true, bold: true)))"))
+            EditSectionHeader(number: 6, title: Text("Homegrown heroes"), rule: false)
             GeometryReader { g in
-                let third = (g.size.width - 2 * Self.gap) / 3
+                // Figma widths: 234 large, 112 small, on a 358 board.
+                let small = (g.size.width - Self.gap) * 112 / 346
+                let large = g.size.width - Self.gap - small
+                let half = (Self.rowHeight - Self.gap) / 2
                 VStack(spacing: Self.gap) {
                     HStack(spacing: Self.gap) {
-                        if l.count > 0 { tile(l[0], big: true).slideIn(0).frame(width: third * 2 + Self.gap, height: Self.large) }
+                        tile(l[0], lift: 40).slideIn(0).frame(width: large, height: Self.rowHeight)
                         VStack(spacing: Self.gap) {
-                            if l.count > 1 { tile(l[1], big: false).slideIn(1).frame(height: Self.small) }
-                            if l.count > 2 { tile(l[2], big: false).slideIn(2).frame(height: Self.small) }
+                            tile(l[1], lift: 50).slideIn(1).frame(height: half)
+                            tile(l[2], lift: 50).slideIn(2).frame(height: half)
                         }
-                        .frame(width: third)
+                        .frame(width: small)
                     }
                     HStack(spacing: Self.gap) {
-                        VStack(spacing: Self.gap) {
-                            if l.count > 3 { tile(l[3], big: false).slideIn(3).frame(height: Self.small) }
-                            if l.count > 4 { tile(l[4], big: false).slideIn(4).frame(height: Self.small) }
-                        }
-                        .frame(width: third)
-                        if l.count > 5 { tile(l[5], big: true).slideIn(5).frame(width: third * 2 + Self.gap, height: Self.large) }
+                        tile(l[3], lift: 30).slideIn(3).frame(width: small, height: Self.rowHeight)
+                        tile(l[4], lift: 30).slideIn(4).frame(width: large, height: Self.rowHeight)
                     }
                 }
             }
-            .frame(height: Self.large * 2 + Self.gap)
+            .frame(height: Self.rowHeight * 2 + Self.gap)
             .padding(.horizontal, EditLayout.gutter)
         }
         .readerCover(item: $reading) { story in
             StoryReaderView(story: story).zoomTransition(id: story.id, in: zoom)
         }
-        .readerCover(item: $opened) { ProductDetailView(product: $0) }
         .sensoryFeedback(.impact(weight: .light), trigger: reading?.id)
     }
 
-    private func tile(_ label: Label, big: Bool) -> some View {
-        Button {
-            if let story = label.story { reading = story } else { opened = label.product }
-        } label: {
-            GeometryReader { g in
-                ArtView(art: label.art)
-                    .frame(width: g.size.width, height: g.size.height)
-                    .clipped()
-                    .overlay {
-                        LinearGradient(stops: [.init(color: .clear, location: big ? 0.6 : 0.45), .init(color: .black.opacity(0.75), location: 1)],
-                                       startPoint: .top, endPoint: .bottom)
-                    }
-                    .overlay(alignment: .bottomLeading) {
-                        Text(label.id)
-                            .font(EditType.display(16, relativeTo: .headline))
-                            .tracking(-0.3)
-                            .foregroundStyle(M.textWhite)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                            .padding(R.spacingSpace12)
-                    }
-            }
-            .overlay { Rectangle().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
-            .contentShape(Rectangle())
+    /// A photo tile with the label's name on a black fade at its foot. `lift` is how far the fade
+    /// reaches above the name (the Figma varies it by tile size).
+    @ViewBuilder
+    private func tile(_ label: Label, lift: CGFloat) -> some View {
+        let face = GeometryReader { g in
+            Image(label.image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: g.size.width, height: g.size.height)
+                .clipped()
+                .overlay(alignment: .bottomLeading) {
+                    Text(label.id)
+                        .font(EditType.text(14, .semibold, relativeTo: .subheadline))
+                        .tracking(-0.24)
+                        .foregroundStyle(M.textPrimary)
+                        .lineLimit(1)
+                        .padding(.horizontal, 10)
+                        .padding(.top, lift)
+                        .padding(.bottom, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(LinearGradient(colors: [.black.opacity(0), .black.opacity(0.6)], startPoint: .top, endPoint: .bottom))
+                }
         }
-        .buttonStyle(PressableStyle())
-        .zoomSource(id: label.id, in: zoom)
-        .accessibilityLabel(label.id)
-        .accessibilityHint(label.story == nil ? "Opens the piece" : "Opens the story")
+        .overlay { Rectangle().strokeBorder(M.borderModerate, lineWidth: R.stroke1Px) }
+        .contentShape(Rectangle())
+
+        if let story = label.story {
+            Button { reading = story } label: { face }
+                .buttonStyle(PressableStyle())
+                .zoomSource(id: story.id, in: zoom)
+                .accessibilityLabel(label.id)
+                .accessibilityHint("Opens the story")
+        } else {
+            face
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(label.id)
+        }
     }
 }
 
@@ -1807,52 +1866,56 @@ private struct VogueIndexSection: View {
     let jump: (Int) -> Void
 
     private static let entries: [(Int, String)] = [
-        (1, "The Edit"), (2, "Hot off the rack"), (3, "What to pair with?"), (4, "Cop these looks"),
-        (5, "Every plan, sorted."), (6, "Homegrown heroes"), (7, "Pick your palette"),
+        (1, "Brand stories"), (2, "Hot off the rack"), (3, "What to pair with"), (4, "Cop these looks"),
+        (5, "Fits for every plan"), (6, "Homegrown heroes"), (7, "Pick your palette"),
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: R.spacingSpace24) {
             VStack(alignment: .leading, spacing: R.spacingSpace8) {
-                Text("In this \(Text("edit").font(EditType.display(28, italic: true, bold: true)))")
-                    .font(EditType.display(28, bold: true))
+                Text("In this edit")
+                    .font(EditType.display(28))
                     .tracking(-0.84)
                     .foregroundStyle(M.textWhite)
                     .accessibilityAddTraits(.isHeader)
-                EditDek(text: "Jump back to any page.")
+                EditDek(text: "Jump back to any section")
             }
             .padding(.horizontal, EditLayout.gutter)
 
-            VStack(spacing: 0) {
+            // Figma: number and title in Playfair 18, an up-right arrow, a hairline under each row.
+            // Rows sit 12pt either side of each hairline; the 44pt tap height carries most of that.
+            VStack(spacing: 2) {
                 ForEach(Self.entries, id: \.0) { n, title in
-                    Button { jump(n) } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: R.spacingSpace16) {
-                            Text(String(format: "%02d", n))
-                                .font(EditType.display(20, bold: true))
-                                .foregroundStyle(M.textTertiary)
-                                .monospacedDigit()
-                                .frame(width: 32, alignment: .leading)
-                            Text(title)
-                                .font(EditType.display(18, relativeTo: .headline))
-                                .tracking(-0.3)
-                                .foregroundStyle(M.textPrimary)
-                            Spacer(minLength: 0)
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(M.iconSecondary)
+                    VStack(spacing: 2) {
+                        Button { jump(n) } label: {
+                            HStack(spacing: R.spacingSpace12) {
+                                Text(String(format: "%02d", n))
+                                    .foregroundStyle(M.textTertiary)
+                                    .monospacedDigit()
+                                Text(title)
+                                    .foregroundStyle(M.textWhite)
+                                Spacer(minLength: 0)
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 18, weight: .light))
+                                    .foregroundStyle(M.textTertiary)
+                                    .frame(width: 24, height: 24)
+                            }
+                            .font(EditType.display(18, relativeTo: .headline))
+                            .tracking(-0.54)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                         }
-                        .frame(minHeight: 52)
-                        .contentShape(Rectangle())
+                        .buttonStyle(PressableStyle())
+                        .accessibilityLabel("Section \(n), \(title)")
+                        .accessibilityHint("Scrolls back to this section")
+                        EditRule()
                     }
-                    .buttonStyle(PressableStyle())
                     .slideIn(n - 1)
-                    .accessibilityLabel("Page \(n), \(title)")
-                    .accessibilityHint("Scrolls back to this section")
-                    .overlay(alignment: .bottom) { EditRule() }
                 }
             }
             .padding(.horizontal, EditLayout.gutter)
         }
+        .padding(.top, R.spacingSpace32)
     }
 }
 

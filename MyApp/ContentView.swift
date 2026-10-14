@@ -11,7 +11,7 @@ struct ContentView: View {
 
         var title: String {
             switch self {
-            case .explore: "Explore"
+            case .explore: "Edit"
             case .search: "Search"
             case .stores: "Stores"
             }
@@ -19,7 +19,7 @@ struct ContentView: View {
 
         var icon: String {
             switch self {
-            case .explore: "safari"
+            case .explore: "binoculars"
             case .search: "magnifyingglass"
             case .stores: "bag"
             }
@@ -27,7 +27,7 @@ struct ContentView: View {
 
         var selectedIcon: String {
             switch self {
-            case .explore: "safari.fill"
+            case .explore: "binoculars.fill"
             case .search: "magnifyingglass"
             case .stores: "bag.fill"
             }
