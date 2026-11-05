@@ -95,6 +95,16 @@ enum BackstageTokens {
         static let brandPurple900 = Color(dark: Color(rgba: 0x160D3BFF), light: Color(rgba: 0x160D3BFF))
         static let textBlack = Color(dark: Core.colorGrey900, light: Core.colorGrey900)
 
+        // Hub mode (Figma "Hub mode" colours with no Backstage role yet)
+        static let hubTextRating = Color(dark: Color(rgba: 0x1ABC50FF), light: Color(rgba: 0x1ABC50FF))  // Figma colors/green/600
+        static let hubTextSuccess = Color(dark: Color(rgba: 0x58E487FF), light: Color(rgba: 0x1E9E4AFF))  // Figma color/text/success
+        static let hubTextClosed = Color(dark: Color(rgba: 0xF09275FF), light: Color(rgba: 0xC9502CFF))
+        static let hubTextNew = Color(dark: Color(rgba: 0x987EFFFF), light: Color(rgba: 0x5631EDFF))
+        static let hubSurfaceNew = Color(dark: Color(rgba: 0x886AFF1A), light: Color(rgba: 0x886AFF1A))
+        static let hubSurfaceRating = Color(dark: Color(rgba: 0x15F5201A), light: Color(rgba: 0x15F5201A))
+        static let hubSurfaceChip = Color(dark: Color(rgba: 0xFFFFFF29), light: Color(rgba: 0xFFFFFF29))  // Figma white + alpha 16%
+        static let hubPureWhite = Core.colorPureWhite
+
         // icon/*
         static let iconPrimary = Color(dark: Color(rgba: 0xF7F7F7FF), light: Core.colorGrey900)  // Figma color/icon/primary
         static let iconSecondary = Color(dark: Core.colorTransparaentWhiteWhite72Pct, light: Core.colorTransparaentGreyGrey72Pct)

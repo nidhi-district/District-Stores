@@ -8,7 +8,7 @@ private typealias R = BackstageTokens.Responsive
 
 enum BackstageFonts {
     static let faces = [
-        "BeVietnamPro-Regular", "BeVietnamPro-Medium", "BeVietnamPro-SemiBold", "BeVietnamPro-Bold", "BeVietnamPro-ExtraBold",
+        "BeVietnamPro-Regular", "BeVietnamPro-Medium", "BeVietnamPro-SemiBold", "BeVietnamPro-Bold", "BeVietnamPro-ExtraBold", "BeVietnamPro-Italic",
         // Magazine accent faces: the cover-style section opener and the pull quote.
         "Anton-Regular", "DMSerifDisplay-Italic", "PlayfairDisplay", "PlayfairDisplay-Italic",
         // The Vogue-styled Explore tab's newsprint faces.
@@ -58,6 +58,12 @@ enum BackstageTextStyle {
     case finePrint1    // Fine print/Fine Print 1
     case finePrint2    // Fine print/Fine Print 2
     case button3       // Buttons & Links/Button 3
+    // The "Hub mode" Figma file sets these sizes differently from the Backstage reference above.
+    case hubTitle1     // Hub mode Title/Title 1
+    case hubTitle2     // Hub mode Title/Title 2
+    case hubBody2      // Hub mode Body/Body 2
+    case hubLabel1     // Hub mode Label/Label 1
+    case hubNavLabel   // Hub mode bottom nav label
 
     // Title 3, Title 4, Label 2, Label 3, Body 3 and Button 3 follow the Figma "Homepage and
     // Search" file's text variables; the rest keep the Backstage reference values.
@@ -67,45 +73,45 @@ enum BackstageTextStyle {
             // The Vogue newsprint voice: Playfair Display for titles, Source Serif for running
             // and label text, a condensed face for small caps.
             return switch self {
-            case .heading3, .title1, .title2: "PlayfairDisplayRoman-Bold"
+            case .heading3, .title1, .title2, .hubTitle1, .hubTitle2: "PlayfairDisplayRoman-Bold"
             case .title3, .title4, .caption: "PlayfairDisplayRoman-SemiBold"
-            case .label1, .label2, .label3, .button3: "SourceSerif4Roman-SemiBold"
-            case .body1, .body2, .body3, .finePrint1: "SourceSerif4Roman-Regular"
+            case .label1, .label2, .label3, .button3, .hubLabel1, .hubNavLabel: "SourceSerif4Roman-SemiBold"
+            case .body1, .body2, .body3, .finePrint1, .hubBody2: "SourceSerif4Roman-Regular"
             case .specialTitle, .finePrint2: "Anton-Regular"
             }
         }
         return switch self {
         case .heading3, .title1: "BeVietnamPro-ExtraBold"
         case .title2, .specialTitle: "BeVietnamPro-Bold"
-        case .title3, .title4, .label1, .button3: "BeVietnamPro-SemiBold"
-        case .caption, .finePrint1, .finePrint2, .label2, .label3: "BeVietnamPro-Medium"
-        case .body1, .body2, .body3: "BeVietnamPro-Regular"
+        case .title3, .title4, .label1, .button3, .hubTitle1, .hubTitle2, .hubNavLabel: "BeVietnamPro-SemiBold"
+        case .caption, .finePrint1, .finePrint2, .label2, .label3, .hubLabel1: "BeVietnamPro-Medium"
+        case .body1, .body2, .body3, .hubBody2: "BeVietnamPro-Regular"
         }
     }
 
     var size: CGFloat {
         switch self {
         case .heading3: 26
-        case .title1: 22
+        case .title1, .hubTitle1: 22
         case .title2: 20
-        case .caption, .body1: 18
+        case .caption, .body1, .hubTitle2: 18
         case .title3, .body2, .label1: 16
-        case .title4: 14
+        case .title4, .hubBody2, .hubLabel1: 14
         case .finePrint1, .body3, .label2, .button3: 12
         case .label3: 11
-        case .specialTitle, .finePrint2: 10
+        case .specialTitle, .finePrint2, .hubNavLabel: 10
         }
     }
 
     var lineHeight: CGFloat {
         switch self {
-        case .heading3: 28
-        case .title1, .title2, .body1: 24
-        case .caption, .body2, .title3: 22
+        case .heading3, .hubTitle1: 28
+        case .title1, .title2, .body1, .hubTitle2: 24
+        case .caption, .body2, .title3, .hubBody2: 22
         case .label1: 20
-        case .title4, .finePrint1, .body3, .button3: 18
+        case .title4, .finePrint1, .body3, .button3, .hubLabel1: 18
         case .label2, .specialTitle, .finePrint2: 16
-        case .label3: 14
+        case .label3, .hubNavLabel: 14
         }
     }
 
@@ -113,8 +119,9 @@ enum BackstageTextStyle {
     var tracking: CGFloat {
         switch self {
         case .title2: -0.02
-        case .title3: -0.01
+        case .title3, .hubTitle1, .hubTitle2: -0.01
         case .title4: -0.24 / 14
+        case .hubNavLabel: 0.04
         case .button3: -0.24 / 12
         case .specialTitle: 0.2
         default: 0
@@ -125,14 +132,14 @@ enum BackstageTextStyle {
     var relativeTo: Font.TextStyle {
         switch self {
         case .heading3: .title
-        case .title1: .title2
-        case .title2: .title3
+        case .title1, .hubTitle1: .title2
+        case .title2, .hubTitle2: .title3
         case .title3, .title4: .headline
         case .caption, .body1: .body
-        case .body2, .label1: .callout
+        case .body2, .label1, .hubBody2, .hubLabel1: .callout
         case .body3, .label2: .subheadline
         case .label3, .finePrint1, .button3: .caption
-        case .specialTitle, .finePrint2: .caption2
+        case .specialTitle, .finePrint2, .hubNavLabel: .caption2
         }
     }
 }
@@ -156,7 +163,7 @@ private struct BackstageTextModifier: ViewModifier {
             .font(.custom(style.fontName(vogue: vogue), fixedSize: size))
             .tracking(size * style.tracking)
             .lineSpacing(max(0, (style.lineHeight - style.size * Self.naturalLineHeight) * scale))
-            .textCase(style == .specialTitle ? .uppercase : nil)
+            .textCase(style == .specialTitle || style == .hubNavLabel ? .uppercase : nil)
     }
 }
 
@@ -358,9 +365,27 @@ struct BackstageTextButtonStyle: ButtonStyle {
 
 struct BackstageFilterButtonStyle: ButtonStyle {
     let isActive: Bool
+    /// The Hub mode chip: 32pt tall on the primary surface with a subtle border. Vertical padding keeps a 44pt target.
+    var compact = false
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
+        if compact {
+            configuration.label
+                .backstageText(.label2)
+                .foregroundStyle(isActive ? M.buttonFilterLabelActive : (pressed ? M.textSecondary : M.textPrimary))
+                .padding(.horizontal, R.spacingSpace12)
+                .frame(height: 32)
+                .background(isActive ? M.buttonFilterBackgroundActive : M.surfacePrimary, in: Capsule())
+                .overlay(Capsule().strokeBorder(isActive ? M.buttonFilterBorderActive : M.borderSubtle, lineWidth: R.stroke1Px))
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+        } else {
+            regularBody(configuration, pressed: pressed)
+        }
+    }
+
+    private func regularBody(_ configuration: Configuration, pressed: Bool) -> some View {
         configuration.label
             .backstageText(.label2)
             .foregroundStyle(isActive ? M.buttonFilterLabelActive : (pressed ? M.buttonFilterLabelPressed : M.buttonFilterLabel))

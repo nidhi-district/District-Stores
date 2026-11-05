@@ -11,7 +11,7 @@ struct MyAppApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                ContentView()
+                DistrictRootView()
                 if showsSplash {
                     SplashView { showsSplash = false }
                         .transition(.opacity)

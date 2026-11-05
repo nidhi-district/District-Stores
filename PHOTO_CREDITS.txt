@@ -106,3 +106,9 @@ HP drop: Hardik Pandya photos from Wikimedia Commons (attribution required; conf
 hp_wiki_worldcup	"Hardik Pandya in PMO New Delhi", Prime Minister's Office (India), GODL-India	https://commons.wikimedia.org/wiki/File:Hardik_Pandya_in_PMO_New_Delhi.jpg
 hp_wiki_brothers	"Krunal Pandya and Hardik Pandya", Bollywood Hungama, CC BY 3.0	https://commons.wikimedia.org/wiki/File:Krunal_Pandya_and_Hardik_Pandya.jpg
 hp_wiki_street	"Hardik Pandya 2020", Bollywood Hungama, CC BY 3.0	https://commons.wikimedia.org/wiki/File:Hardik_Pandya_2020.jpg
+
+Hubs placeholder photography (hotels and beaches have no photos in the Figma; replace before release):
+hub_hotel_leela	https://images.unsplash.com/photo-1551882547-ff40c63fe5fa
+hub_hotel_taj	https://images.unsplash.com/photo-1542314831-068cd1dbfeeb
+hub_beach_baga	https://images.unsplash.com/photo-1519046904884-53103b34b206
+hub_beach_juhu	https://images.unsplash.com/photo-1507525428034-b723cf961d3e

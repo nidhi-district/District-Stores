@@ -390,10 +390,15 @@ struct TabHeader: View {
     let title: String
     @Binding var location: String
     let locations: [String]
+    /// The For You landing is the District home, so it hides its own home button.
+    var showsHomeButton = true
+    @Environment(\.districtHomeAction) private var goHome
 
     var body: some View {
         HStack(spacing: R.spacingSpace12) {
-            GlassIconButton(systemName: "house", label: "District home")
+            if showsHomeButton {
+                GlassIconButton(systemName: "house", label: "District home") { goHome() }
+            }
 
             Menu {
                 Picker("Location", selection: $location) {

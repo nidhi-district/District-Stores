@@ -17,7 +17,7 @@ private func piece(_ name: String, _ brand: String, _ category: String, _ image:
 }
 
 /// Pills that wrap onto a new line as they run out of width.
-private struct EditFlowLayout: Layout {
+struct EditFlowLayout: Layout {
     var spacing: CGFloat = 8
     /// Rows sit closer than pills, since each pill already carries a 44pt tap height.
     var rowSpacing: CGFloat = 0

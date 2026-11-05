@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Map Button">
+<rect width="38" height="38" rx="19" fill="white" fill-opacity="0.08"/>
+<rect x="0.5" y="0.5" width="37" height="37" rx="18.5" stroke="white" stroke-opacity="0.1"/>
+<path id="Vector" d="M27.3125 19L10.6875 19M17.8125 26.125L10.6875 19L17.8125 11.875" stroke-width="1.78125" stroke-linecap="round" stroke-linejoin="round" stroke="#F7F7F7"/>
+</g>
+</svg>
