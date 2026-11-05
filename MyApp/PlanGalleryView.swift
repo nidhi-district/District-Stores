@@ -4,18 +4,13 @@ private typealias M = BackstageTokens.Mapped
 private typealias R = BackstageTokens.Responsive
 
 /// Full-screen gallery for "Fits for every plan". Switch occasions with the chips or by swiping
-/// sideways; tap any look to view it full screen.
+/// sideways; tap any look to open its product page.
 struct PlanGalleryView: View {
     private let plans = EditorialData.plans
     @State private var current: String?
-    @State private var viewing: Viewing?
+    @State private var opened: Product?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    struct Viewing: Equatable {
-        let planID: String
-        let index: Int
-    }
 
     init(plan: Plan) {
         _current = State(initialValue: plan.id)
@@ -31,10 +26,11 @@ struct PlanGalleryView: View {
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: R.spacingSpace0) {
                             ForEach(plans) { plan in
+                                // Each look opens its product page.
                                 PlanGalleryPage(plan: plan, topInset: headerHeight) { index in
-                                    withAnimation(.smooth(duration: 0.3)) {
-                                        viewing = Viewing(planID: plan.id, index: index)
-                                    }
+                                    let look = plan.looks[index]
+                                    opened = Product(name: look.name, brand: look.brand, mark: look.brand.uppercased(),
+                                                     category: plan.title, isNew: false, art: look.art)
                                 }
                                 .containerRelativeFrame([.horizontal, .vertical])
                                 .id(plan.id)
@@ -51,17 +47,10 @@ struct PlanGalleryView: View {
 
                 header
             }
-            .overlay {
-                if let viewing, let plan = plans.first(where: { $0.id == viewing.planID }) {
-                    Lightbox(looks: plan.looks, start: viewing.index) {
-                        withAnimation(.smooth(duration: 0.25)) { self.viewing = nil }
-                    }
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                }
-            }
         }
         .background(M.backgroundPrimary.ignoresSafeArea())
         .sensoryFeedback(.selection, trigger: current)
+        .readerCover(item: $opened) { ProductDetailView(product: $0) }
     }
 
     /// Close button and the plan switcher.
@@ -206,7 +195,7 @@ struct LookFeed: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(look.name), \(look.brand)")
                 .accessibilityValue("Look \(i + 1) of \(looks.count)")
-                .accessibilityHint("Opens full screen")
+                .accessibilityHint("Opens the look")
                 .accessibilityAddTraits(.isButton)
             }
         }

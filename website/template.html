@@ -62,6 +62,21 @@ h2 { font-family: var(--display); font-weight: 600; font-size: 28px; letter-spac
 .bar { flex: 1; height: 3px; background: rgba(255,255,255,0.24); position: relative; }
 .bar i { position: absolute; inset: 0 auto 0 0; background: var(--fg); transition: width .3s; }
 
+/* Rails on desktop: arrow buttons, drag with the mouse, and a thin scrollbar */
+.rail { position: relative; }
+.rail-btn { display: none; position: absolute; top: 50%; z-index: 5; width: 40px; height: 40px; margin-top: -8px; border-radius: 50%;
+  background: rgba(19,19,22,.78); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); place-items: center; color: var(--fg); transition: opacity .2s; }
+.rail-btn.prev { left: 6px; } .rail-btn.next { right: 6px; }
+.rail-btn[disabled] { opacity: 0; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+  .rail-btn { display: grid; }
+  .row { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.25) transparent; cursor: grab; padding-bottom: 10px; }
+  .row::-webkit-scrollbar { display: block; height: 6px; }
+  .row::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 3px; }
+  .row.dragging { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; }
+  .row.dragging * { pointer-events: none; }
+}
+
 /* Photo cards */
 .card { position: relative; overflow: hidden; border: 1px solid var(--line); background: var(--surface); text-align: left; }
 .card > img, .card > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -378,6 +393,7 @@ function renderPair(sel) {
       return `<div class="card look"><img src="${img(n)}" alt=""><span class="foot" style="padding:21px 12px 16px"><span class="n one">${esc(t)}</span></span></div>`; }).join("")}</div>
     <div class="progress"><div class="bar"><i id="pairBar"></i></div></div>`;
   bindPair(body);
+  rail($("#pairLooks"));
   track($("#pairLooks"), $("#pairBar"));
   reveal($("#pairLooks"));
 }
@@ -411,6 +427,33 @@ $("#idx").innerHTML = SECTIONS.map(([id, t], i) => `<li><a href="#${id}"><span>$
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>`).join("");
 
 /* ---------- Behaviour ---------- */
+/* Rails: arrows step a card at a time; a mouse can drag them; a drag never counts as a tap. */
+function rail(row) {
+  if (!row || row.dataset.rail) return; row.dataset.rail = "1";
+  const wrap = document.createElement("div"); wrap.className = "rail";
+  row.parentNode.insertBefore(wrap, row); wrap.append(row);
+  const mk = (cls, label, d) => { const b = document.createElement("button"); b.type = "button"; b.className = `rail-btn ${cls}`; b.setAttribute("aria-label", label);
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${d}"/></svg>`; wrap.append(b); return b; };
+  const prev = mk("prev", "Scroll back", "m15 18-6-6 6-6"), next = mk("next", "Scroll forward", "m9 18 6-6-6-6");
+  const step = () => { const k = row.children; return k[1] ? k[1].offsetLeft - k[0].offsetLeft : row.clientWidth * .8; };
+  prev.onclick = () => row.scrollBy({ left: -step(), behavior: reduce ? "auto" : "smooth" });
+  next.onclick = () => row.scrollBy({ left: step(), behavior: reduce ? "auto" : "smooth" });
+  const sync = () => { prev.disabled = row.scrollLeft < 4; next.disabled = row.scrollLeft + row.clientWidth > row.scrollWidth - 4; };
+  row.addEventListener("scroll", sync, { passive: true }); addEventListener("resize", sync); sync();
+  let x0 = 0, s0 = 0, moved = false, down = false;
+  row.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse" || e.button !== 0) return; down = true; moved = false; x0 = e.clientX; s0 = row.scrollLeft; });
+  addEventListener("pointermove", e => { if (!down) return; const dx = e.clientX - x0;
+    if (!moved && Math.abs(dx) > 5) { moved = true; row.classList.add("dragging"); }
+    if (moved) { row.scrollLeft = s0 - dx; e.preventDefault(); } });
+  addEventListener("pointerup", () => { if (!down) return; down = false;
+    if (moved) { row.classList.remove("dragging");
+      const k = step(), target = Math.round(row.scrollLeft / k) * k; row.scrollTo({ left: target, behavior: reduce ? "auto" : "smooth" });
+      const eat = e => { e.stopPropagation(); e.preventDefault(); };
+      row.addEventListener("click", eat, { capture: true, once: true });
+      setTimeout(() => row.removeEventListener("click", eat, { capture: true }), 0); } });
+}
+document.querySelectorAll(".row").forEach(rail);
+
 function track(row, bar, count) {
   const update = () => {
     const kids = [...row.children], step = kids[1] ? kids[1].offsetLeft - kids[0].offsetLeft : 1;

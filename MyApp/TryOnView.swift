@@ -18,47 +18,13 @@ enum Metallic {
                                       startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
-/// The "Try on" control (Figma 7473:6358): a dark graphite pill reading "TryOn!", with a
-/// sparkle and a little 3D shirt on a hanger peeking in from the right edge. Still, no motion.
+/// The "TryOn!" control used across the app. It draws `TryOnPill`, the animated Figma pill.
 struct TryOnButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text("TryOn!")
-                .font(.custom("BeVietnamPro-Medium", size: 11, relativeTo: .caption2))
-                .foregroundStyle(.white)
-                .padding(.leading, 7)
-                .frame(width: 77, height: 26, alignment: .leading)
-                .overlay(alignment: .topLeading) {
-                    // The shirt, mirrored as in the Figma, clipped by the pill's right end.
-                    Image("vogue_tryon_shirt")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 29, height: 29)
-                        .scaleEffect(x: -1, y: 1)
-                        .offset(x: 50, y: 3)
-                        .accessibilityHidden(true)
-                }
-                .overlay(alignment: .topLeading) {
-                    Image("vogue_ic_sparkle")
-                        .resizable()
-                        .frame(width: 11, height: 11)
-                        .offset(x: 48, y: 5)
-                        .accessibilityHidden(true)
-                }
-                .background(LinearGradient(stops: [.init(color: Color(hex: 0x1E1E20), location: 0.01),
-                                                   .init(color: Color(hex: 0x7D7D86), location: 2.2)],
-                                           startPoint: .top, endPoint: .bottom))
-                .clipShape(Capsule())
-                .overlay { Capsule().strokeBorder(.white.opacity(0.5), lineWidth: R.stroke1Px) }
-                .shadow(color: .black.opacity(0.25), radius: 6.5, y: 4)
-                .frame(minHeight: 44)
-                .contentShape(Capsule())
-        }
-        .buttonStyle(PressableStyle())
-        .accessibilityLabel("Virtual try-on")
-        .accessibilityHint("Try this look on a photo of you")
+        // One try-on button across the app; small cards use its compact size.
+        TryOnPill(size: .compact, action: action)
     }
 }
 

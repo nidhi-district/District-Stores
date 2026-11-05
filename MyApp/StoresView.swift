@@ -10,16 +10,70 @@ struct StoresView: View {
     @State private var saved: Set<String> = []
     @State private var offerFilter: OfferFilter = .all
     @State private var sort: StoreSort = .distance
-    @State private var drop: HPDropPresentation? = StoresView.launchDrop
-    @State private var bot: DiscoveryBotPresentation?
+    @State private var productDrops: ProductDropsPresentation? = StoresView.launchProductDrops
+    @State private var giftVouchers: GiftVouchersPresentation? = StoresView.launchGiftVouchers
+    @State private var tryOn: TryOnPresentation? = StoresView.launchTryOn
+    @State private var product: StoreProduct? = StoresView.launchProduct
+    @State private var storePage: StoreDetail? = StoresView.launchStore
+    @State private var occasion: OccasionEdit? = StoresView.launchOccasion
     @Namespace private var dropZoom
 
     private let locations = ["Vatika City", "Golf Course Extension Road", "Cyberhub, DLF Phase 2", "Sector 29"]
 
-    /// Debug builds accept `-openDrop` so a simulator can open straight on the HP drop page.
-    private static var launchDrop: HPDropPresentation? {
+    /// Debug builds accept `-openProductDrops` to open straight on the product drops flow.
+    private static var launchProductDrops: ProductDropsPresentation? {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-openDrop") { return HPDropPresentation() }
+        if ProcessInfo.processInfo.arguments.contains("-openProductDrops") { return ProductDropsPresentation() }
+        #endif
+        return nil
+    }
+
+    /// Debug builds accept `-openGiftVouchers` to open straight on the gift voucher deals.
+    private static var launchGiftVouchers: GiftVouchersPresentation? {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-openGiftVouchers") { return GiftVouchersPresentation() }
+        #endif
+        return nil
+    }
+
+    /// Debug builds accept `-openTryOn` to open straight on the try-on closet.
+    private static var launchTryOn: TryOnPresentation? {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-openTryOn") { return TryOnPresentation() }
+        #endif
+        return nil
+    }
+
+    /// Debug builds accept `-openStorePDP <photo>` to open a store piece's product page.
+    private static var launchProduct: StoreProduct? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-openStorePDP"), i + 1 < args.count {
+            let image = args[i + 1]
+            let store = StoresData.stores.first { $0.products.contains(image) }?.name
+                ?? StoresData.newIn.first { $0.products.contains(image) }?.brand ?? "adidas"
+            return StoreProduct.from(image: image, store: store)
+        }
+        #endif
+        return nil
+    }
+
+    /// Debug builds accept `-openOccasion` to open the first "Shop for occasion" edit.
+    private static var launchOccasion: OccasionEdit? {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-openOccasion") { return OccasionData.edits.first }
+        #endif
+        return nil
+    }
+
+    /// Debug builds accept `-openStore <name>` to open a store's page.
+    private static var launchStore: StoreDetail? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-openStore"), i + 1 < args.count,
+           let store = StoresData.stores.first(where: { $0.name == args[i + 1] }) {
+            return StoreDetail.of(store)
+        }
         #endif
         return nil
     }
@@ -27,31 +81,57 @@ struct StoresView: View {
     var body: some View {
         ScrollView(.vertical) {
             VStack(spacing: R.spacingSpace40) {
-                HPDropBanner { drop = HPDropPresentation() }
-                    .zoomSource(id: "hp-drop", in: dropZoom)
+                banners
+                // Festive edits, each tagged for try-on: try-on's entry from the home.
+                section("Shop for occasion") { ShopForOccasionRail { occasion = $0 } }
                 section("Shop by category") { categories }
                 section("What's new in stores") { whatsNew }
                 section("District benefits") { benefits }
                 section("In your district") { collections }
                 section("All stores") { allStores }
+                TryOnBanner { tryOn = TryOnPresentation() }
+                    .zoomSource(id: "virtual-try-on", in: dropZoom)
+                    .padding(.horizontal, R.spacingSpace16)
             }
             .padding(.bottom, R.spacingSpace48)
         }
         .scrollIndicators(.hidden)
+        #if DEBUG
+        // `-storesBottom` opens the page scrolled to the end, where the try-on banner sits.
+        .defaultScrollAnchor(ProcessInfo.processInfo.arguments.contains("-storesBottom") ? .bottom : .top)
+        #endif
         // The banner starts at the very top, behind the status bar and header.
         .ignoresSafeArea(edges: .top)
         .background(M.backgroundPrimary.ignoresSafeArea())
         .overlay(alignment: .top) { header }
-        .readerCover(item: $drop) { _ in
-            HPDropView().zoomTransition(id: "hp-drop", in: dropZoom)
+        .readerCover(item: $productDrops) { _ in
+            ProductDropsView().zoomTransition(id: "product-drops", in: dropZoom)
         }
-        .overlay(alignment: .bottomTrailing) {
-            DiscoveryBotEntry { bot = DiscoveryBotPresentation() }
-                .zoomSource(id: "discovery-bot", in: dropZoom)
-                .padding(R.spacingSpace16)
+        .readerCover(item: $giftVouchers) { _ in
+            GiftVouchersView().zoomTransition(id: "gift-vouchers", in: dropZoom)
         }
-        .readerCover(item: $bot) { _ in
-            DiscoveryBotView().zoomTransition(id: "discovery-bot", in: dropZoom)
+        .readerCover(item: $tryOn) { _ in
+            TryOnClosetView().zoomTransition(id: "virtual-try-on", in: dropZoom)
+        }
+        .readerCover(item: $storePage) { StoreDetailView(detail: $0) }
+        .readerCover(item: $occasion) { OccasionGalleryView(edit: $0) }
+        .readerCover(item: $product) { p in
+            StoreProductView(product: p).zoomTransition(id: Self.zoomID(p.image, p.store), in: dropZoom)
+        }
+    }
+
+    // MARK: Banners
+
+    /// Hero carousel: product drops, then gift voucher deals.
+    private var banners: some View {
+        StoresBannerCarousel(count: 2) { page in
+            if page == 0 {
+                ProductDropsBanner { productDrops = ProductDropsPresentation() }
+                    .zoomSource(id: "product-drops", in: dropZoom)
+            } else {
+                GiftVouchersBanner { giftVouchers = GiftVouchersPresentation() }
+                    .zoomSource(id: "gift-vouchers", in: dropZoom)
+            }
         }
     }
 
@@ -120,7 +200,8 @@ struct StoresView: View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: R.spacingSpace12) {
                 ForEach(StoresData.newIn) { item in
-                    NewInStoreCard(item: item, isSaved: saved.contains(item.id)) { toggleSaved(item.id) }
+                    NewInStoreCard(item: item, isSaved: saved.contains(item.id), toggleSave: { toggleSaved(item.id) },
+                                   zoom: dropZoom, openStore: { openStore(item.brand) }) { open($0, at: item.brand) }
                 }
             }
             .scrollTargetLayout()
@@ -187,7 +268,7 @@ struct StoresView: View {
     private var collections: some View {
         ScrollView(.horizontal) {
             LazyHStack(alignment: .top, spacing: R.spacingSpace12) {
-                ForEach(StoresData.collections, id: \.title) { CollectionCard(collection: $0) }
+                ForEach(StoresData.collections, id: \.title) { CollectionCard(collection: $0, openStore: openStore) }
             }
             .scrollTargetLayout()
         }
@@ -235,7 +316,8 @@ struct StoresView: View {
                     if i > 0 {
                         Rectangle().fill(M.surfacePrimary).frame(height: R.spacingSpace8)
                     }
-                    StoreRow(store: store, isSaved: saved.contains(store.id)) { toggleSaved(store.id) }
+                    StoreRow(store: store, isSaved: saved.contains(store.id), toggleSave: { toggleSaved(store.id) },
+                             zoom: dropZoom, openStore: { storePage = StoreDetail.of(store) }) { open($0, at: store.name) }
                         .padding(.vertical, R.spacingSpace24)
                 }
             }
@@ -264,6 +346,19 @@ struct StoresView: View {
     private func toggle(_ filter: OfferFilter) {
         offerFilter = offerFilter == filter ? .all : filter
     }
+
+    /// A store's name or card opens its store page, when the store is in the list.
+    private func openStore(_ name: String) {
+        if let store = StoresData.stores.first(where: { $0.name == name }) { storePage = StoreDetail.of(store) }
+    }
+
+    /// A piece from a store's rail opens its product page.
+    private func open(_ image: String, at store: String) {
+        product = StoreProduct.from(image: image, store: store)
+    }
+
+    /// Zoom ids pair the photo with its store, since a photo can sit on more than one rail.
+    static func zoomID(_ image: String, _ store: String) -> String { "store-pdp-\(store)-\(image)" }
 
     private func toggleSaved(_ id: String) {
         if saved.contains(id) { saved.remove(id) } else { saved.insert(id) }
@@ -392,6 +487,11 @@ struct NewInStoreCard: View {
     let item: NewInStore
     let isSaved: Bool
     let toggleSave: () -> Void
+    var zoom: Namespace.ID? = nil
+    /// Opens the store's page.
+    var openStore: () -> Void = {}
+    /// Opens a piece's product page.
+    var openProduct: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: R.spacingSpace12) {
@@ -406,6 +506,7 @@ struct NewInStoreCard: View {
                 .clipped()
                 .padding(.bottom, -R.spacingSpace40)
 
+            Button(action: openStore) {
             HStack(spacing: R.spacingSpace12) {
                 BrandMark(brand: item.brand, mark: item.mark, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
@@ -418,15 +519,27 @@ struct NewInStoreCard: View {
                         .foregroundStyle(M.textSecondary)
                         .lineLimit(1)
                 }
+                Spacer(minLength: 0)
             }
+            .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the store")
             .padding(.horizontal, R.spacingSpace12)
 
             HStack(spacing: R.spacingSpace8) {
                 ForEach(item.products, id: \.self) { name in
-                    ArtView(art: Art(name, [0x333333, 0x777777]))
-                        .frame(height: 92)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                    Button { openProduct(name) } label: {
+                        ArtView(art: Art(name, [0x333333, 0x777777]))
+                            .frame(height: 92)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                            .contentShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                    }
+                    .buttonStyle(PressableStyle())
+                    .modifier(OptionalZoomSource(id: StoresView.zoomID(name, item.brand), zoom: zoom))
+                    .accessibilityLabel(StoreProduct.from(image: name, store: item.brand).name)
+                    .accessibilityHint("Opens the product")
                 }
             }
             .padding(.horizontal, R.spacingSpace12)
@@ -446,6 +559,8 @@ struct NewInStoreCard: View {
 /// A curated set of nearby stores with their offers.
 struct CollectionCard: View {
     let collection: StoreCollection
+    /// Opens a store's page by name.
+    var openStore: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: R.spacingSpace20) {
@@ -468,6 +583,7 @@ struct CollectionCard: View {
 
             VStack(alignment: .leading, spacing: R.spacingSpace16) {
                 ForEach(collection.stores, id: \.name) { s in
+                    Button { openStore(s.name) } label: {
                     HStack(spacing: R.spacingSpace16) {
                         BrandMark(brand: s.name, mark: s.mark, size: 56)
                         VStack(alignment: .leading, spacing: 2) {
@@ -485,7 +601,11 @@ struct CollectionCard: View {
                             .backstageText(.label3)
                             .foregroundStyle(M.textOffer)
                         }
+                        Spacer(minLength: 0)
                     }
+                    .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     .accessibilityElement(children: .combine)
                 }
             }
@@ -502,10 +622,17 @@ struct StoreRow: View {
     let store: Store
     let isSaved: Bool
     let toggleSave: () -> Void
+    var zoom: Namespace.ID? = nil
+    /// Opens the store's page.
+    var openStore: () -> Void = {}
+    /// Opens a piece's product page.
+    var openProduct: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: R.spacingSpace16) {
             HStack(alignment: .top, spacing: R.spacingSpace12) {
+                Button(action: openStore) {
+                HStack(alignment: .top, spacing: R.spacingSpace12) {
                 BrandMark(brand: store.name, mark: store.mark, size: 56)
                 VStack(alignment: .leading, spacing: R.spacingSpace4) {
                     Text(store.name)
@@ -523,23 +650,33 @@ struct StoreRow: View {
                     .foregroundStyle(M.textSecondary)
                 }
                 Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Opens the store")
                 BookmarkButton(isSaved: isSaved, action: toggleSave)
             }
             .padding(.horizontal, R.spacingSpace16)
-            .accessibilityElement(children: .combine)
 
             ScrollView(.horizontal) {
                 LazyHStack(spacing: R.spacingSpace8) {
                     ForEach(store.products, id: \.self) { name in
-                        ArtView(art: Art(name, [0x333333, 0x777777]))
-                            .frame(width: 104, height: 104)
-                            .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                        Button { openProduct(name) } label: {
+                            ArtView(art: Art(name, [0x333333, 0x777777]))
+                                .frame(width: 104, height: 104)
+                                .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                        }
+                        .buttonStyle(PressableStyle())
+                        .modifier(OptionalZoomSource(id: StoresView.zoomID(name, store.name), zoom: zoom))
+                        .accessibilityLabel(StoreProduct.from(image: name, store: store.name).name)
+                        .accessibilityHint("Opens the product")
                     }
                 }
                 .scrollTargetLayout()
             }
             .carousel()
-            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: R.spacingSpace12) {
                 OfferBar(text: store.offer)
@@ -557,6 +694,16 @@ struct StoreRow: View {
             }
             .padding(.horizontal, R.spacingSpace16)
         }
+    }
+}
+
+/// A zoom source only when the card is given a namespace to zoom from.
+private struct OptionalZoomSource: ViewModifier {
+    let id: String
+    let zoom: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let zoom { content.zoomSource(id: id, in: zoom) } else { content }
     }
 }
 

@@ -128,7 +128,7 @@ struct LookSku: Identifiable {
 
     /// The option as a product, for the product page.
     var product: Product {
-        Product(name: name, brand: brand, mark: brand.uppercased(), category: "Shop the look", isNew: false, art: art)
+        Product(name: name, brand: brand, mark: brand.uppercased(), category: "Shop the look", isNew: false, art: art, price: price)
     }
 }
 
@@ -431,6 +431,26 @@ enum EditorialData {
                 category: "Trousers", isNew: false, art: Art("palette_rose-clay_3", [0x5E2635, 0xEEE8DC, 0x3B241D], seed: 906), price: "₹1,899"),
         Product(name: "Washed utility jumpsuit", brand: "Nicobar", mark: "NICO\nBAR",
                 category: "Jumpsuits", isNew: false, art: Art("palette_slate-noir_1", [0x6E6E73, 0x2A2A2D, 0xBDBDC2], seed: 907), price: "₹4,250"),
+    ]
+
+    /// "Hot off the rack" when the page is filtered to Men.
+    static let rackEditMen: [Product] = [
+        Product(name: "Washed leather biker", brand: "Snitch", mark: "SNI\nTCH",
+                category: "Outerwear", isNew: true, art: Art("rack_snitch_biker", [0x151515, 0x3A2A21, 0x8A5A3B], seed: 921), price: "₹4,499"),
+        Product(name: "Camel wool overcoat", brand: "Zara", mark: "ZARA",
+                category: "Outerwear", isNew: true, art: Art("staple_blazer_3", [0xB07A4A, 0xE9E2D4, 0xC9CCC4], seed: 922), price: "₹6,490"),
+        Product(name: "Printed camp-collar shirt", brand: "Snitch", mark: "SNI\nTCH",
+                category: "Shirts", isNew: true, art: Art("palette_midnight-olive_5", [0x2A1E16, 0x6A4A30, 0x151515], seed: 923), price: "₹1,799"),
+        Product(name: "Embroidered resort shirt", brand: "Dhaga", mark: "DHAGA",
+                category: "Shirts", isNew: true, art: Art("vogue_brand_dhaga", [0xE8B4A8, 0x8A3A2A, 0x3A2A1A], seed: 924), price: "₹3,450"),
+        Product(name: "Sherpa-lined denim jacket", brand: "Blu", mark: "blu",
+                category: "Denim", isNew: false, art: Art("staple_denim_1", [0x3E5C7E, 0xA08850, 0xE9E9E9], seed: 925), price: "₹3,499"),
+        Product(name: "Graphic crew sweatshirt", brand: "The Souled Store", mark: "TSS",
+                category: "Streetwear", isNew: true, art: Art("palette_slate-noir_2", [0x1A1A1A, 0xC9A27A, 0x6A6A6A], seed: 926), price: "₹1,699"),
+        Product(name: "Check suit & bow tie", brand: "H&M", mark: "H&M",
+                category: "Tailoring", isNew: false, art: Art("staple_blazer_2", [0x2A3A3A, 0xE9E9E9, 0x151515], seed: 927), price: "₹8,999"),
+        Product(name: "Boxy logo tee", brand: "The Souled Store", mark: "TSS",
+                category: "Streetwear", isNew: false, art: Art("staple_white_tee_3", [0xEDEDED, 0xC8402F, 0x9A9A9A], seed: 928), price: "₹899"),
     ]
 
     static let products: [Product] = [

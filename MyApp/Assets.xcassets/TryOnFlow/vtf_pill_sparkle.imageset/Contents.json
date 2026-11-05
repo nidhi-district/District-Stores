@@ -1,0 +1,7 @@
+{
+  "images" : [
+    { "filename" : "vtf_pill_sparkle.svg", "idiom" : "universal" }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 },
+  "properties" : { "preserves-vector-representation" : true }
+}

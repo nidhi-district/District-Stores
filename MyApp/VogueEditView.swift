@@ -38,13 +38,18 @@ struct VogueEditView: View {
                     VogueStoriesSection().stackedPage(pinTop: pinTop, backdrop: nil).page(1, into: $pageTops)
                     VogueRackSection()
                         .stackedPage(pinTop: pinTop, backdrop: .wash(Color(hex: 0xA5A5AC).opacity(0.1))).page(2, into: $pageTops)
-                    VoguePairSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(3, into: $pageTops)
-                    VogueLooksSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(4, into: $pageTops)
-                    VoguePlansSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(5, into: $pageTops)
-                    VogueBentoSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(6, into: $pageTops)
+                    VogueVibeSection(number: 3).stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(3, into: $pageTops)
+                    VoguePairSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(4, into: $pageTops)
+                    VogueSwapSection(number: 5).stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(5, into: $pageTops)
+                    VogueLooksSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(6, into: $pageTops)
+                    VogueBudgetSection(number: 7).stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(7, into: $pageTops)
+                    VogueCreatorsSection(number: 8).stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(8, into: $pageTops)
+                    VoguePlansSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(9, into: $pageTops)
+                    VogueBrandSwapSection(number: 10).stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(10, into: $pageTops)
+                    VogueBentoSection().stackedPage(pinTop: pinTop, backdrop: .wash(.white.opacity(0.06))).page(11, into: $pageTops)
                     VoguePaletteSection()
                         .stackedPage(pinTop: pinTop, backdrop: .bloom(EditorialData.palettes.compactMap { $0.hexes.first }))
-                        .page(7, into: $pageTops)
+                        .page(12, into: $pageTops)
                     // The contents page closes the tab; it fills the screen so the page ends on it.
                     VogueIndexSection { n in
                         withAnimation(.smooth(duration: 0.6)) { proxy.scrollTo(EditPages.id(n), anchor: .topLeading) }
@@ -52,7 +57,7 @@ struct VogueEditView: View {
                     .padding(.bottom, 96)
                     .stackedPage(pinTop: pinTop, minHeight: pageHeight, backdrop: nil)
                     .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { indexTop = $0 }
-                    .page(8, into: $pageTops)
+                    .page(13, into: $pageTops)
                 }
                 .coordinateSpace(name: EditPages.space)
             }
@@ -66,7 +71,7 @@ struct VogueEditView: View {
                 if let i = args.firstIndex(of: "-startSection"), i + 1 < args.count, let n = Int(args[i + 1]) {
                     try? await Task.sleep(for: .seconds(2.5))
                     // `-startSection 0` jumps to the very end of the page instead.
-                    if n == 0 { proxy.scrollTo(EditPages.id(8), anchor: .bottom) } else { proxy.scrollTo(EditPages.id(n), anchor: .topLeading) }
+                    if n == 0 { proxy.scrollTo(EditPages.id(13), anchor: .bottom) } else { proxy.scrollTo(EditPages.id(n), anchor: .topLeading) }
                 }
                 // `-flipGender` toggles Women / Men a moment later, to see the skeleton loader.
                 if args.contains("-flipGender") {
@@ -189,7 +194,7 @@ enum EditLayout {
 
 /// A section opener: the folio number in Playfair, fading from white to clear,
 /// tucked behind a 28pt headline, then an optional dek and the hairline rule over the cards.
-private struct EditSectionHeader: View {
+struct EditSectionHeader: View {
     let number: Int
     let title: Text
     var dek: String?
@@ -233,9 +238,9 @@ private struct EditSectionHeader: View {
     }
 }
 
-/// women / men, as a small segmented pill (Figma: lowercase Body 3 on surface/secondary). One
-/// choice shared by every section that shows it. Design only for now: the edit is the same.
-private struct GenderSwitch: View {
+/// women / men, as a small segmented pill (Figma: lowercase Body 3 on surface/secondary). It sits
+/// in the header and filters the whole page; sections read the same "edit.gender" setting.
+struct GenderSwitch: View {
     @AppStorage("edit.gender") private var gender = "women"
     @Namespace private var pill
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -366,12 +371,12 @@ private struct GenderReload: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
     func genderReload(_ skeleton: EditSkeleton) -> some View { modifier(GenderReload(skeleton: skeleton)) }
 }
 
 /// Be Vietnam standfirst under a heading.
-private struct EditDek: View {
+struct EditDek: View {
     let text: String
 
     var body: some View {
@@ -384,7 +389,7 @@ private struct EditDek: View {
 }
 
 /// The hairline that separates a heading from its cards (stronger under the masthead).
-private struct EditRule: View {
+struct EditRule: View {
     var color = M.borderSubtle
 
     var body: some View {
@@ -394,7 +399,7 @@ private struct EditRule: View {
 
 /// Position in a carousel: an optional "02/08" counter, then a hairline whose bright run grows
 /// as you swipe.
-private struct EditProgress: View {
+struct EditProgress: View {
     let index: Int
     let count: Int
     var counter = false
@@ -535,7 +540,7 @@ private struct RiseIn: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
     func slideIn(_ index: Int) -> some View { modifier(SlideIn(index: index)) }
     func riseIn() -> some View { modifier(RiseIn()) }
 }
@@ -639,7 +644,7 @@ private struct VogueKicker: View {
 
 /// The shared photo card: art, a frosted foot behind the caption, a scrim tinted from the photo,
 /// a hairline frame and the caption itself.
-private struct VoguePhotoCard<Caption: View>: View {
+struct VoguePhotoCard<Caption: View>: View {
     let art: Art
     let width: CGFloat
     let height: CGFloat
@@ -698,7 +703,7 @@ private struct VoguePhotoCard<Caption: View>: View {
 }
 
 /// A bundled clip filling its frame: muted, looping, and paused while off screen.
-private struct LoopingVideo: UIViewRepresentable {
+struct LoopingVideo: UIViewRepresentable {
     let name: String
 
     func makeUIView(context: Context) -> PlayerView {
@@ -774,6 +779,9 @@ private struct VogueEditHeader: View {
             .accessibilityHint("Changes location")
 
             Spacer(minLength: 0)
+
+            // One Women / Men choice for the whole page: every section re-edits to it.
+            GenderSwitch()
 
             Button {} label: {
                 Image("vogue_ic_profile")
@@ -899,16 +907,22 @@ private struct VogueRackSection: View {
     @State private var opened: Product?
     @State private var tryingOn: Product?
     @State private var index = 0
+    @AppStorage("edit.gender") private var gender = "women"
 
     var body: some View {
+        let rack = gender == "men" ? EditorialData.rackEditMen : EditorialData.rackEdit
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
             EditSectionHeader(number: 2, title: Text("Hot off the rack"),
                               dek: "Fresh in this week from the labels on your high street, and the stores that stock them.")
             VStack(alignment: .leading, spacing: R.spacingSpace24) {
-                RackCarousel(products: EditorialData.rackEdit, index: $index, open: { opened = $0 }, tryOn: { tryingOn = $0 })
-                EditProgress(index: index, count: EditorialData.rackEdit.count, counter: true)
+                RackCarousel(products: rack, index: $index, open: { opened = $0 }, tryOn: { tryingOn = $0 })
+                    // A fresh rack starts again at its first piece.
+                    .id(gender)
+                    .genderReload(.row(CGSize(width: 283, height: 346)))
+                EditProgress(index: index, count: rack.count, counter: true)
             }
         }
+        .onChange(of: gender) { index = 0 }
         .readerCover(item: $opened) { ProductDetailView(product: $0) }
         .fullScreenCover(item: $tryingOn) { VirtualTryOnView(title: $0.name, art: $0.art) }
         .sensoryFeedback(.selection, trigger: index)
@@ -1107,18 +1121,29 @@ private struct RackOffsetKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
-// MARK: - 03 What to pair with?
+// MARK: - 03 Style Your Staples
 
 /// Starts on the pieces you already own, as product shots. Tap one and the grid folds up into tabs
 /// (each product flies into its tab's thumbnail) while looks built on that piece rise in below.
 private struct VoguePairSection: View {
     @State private var selected: String?
     @State private var opened: Opened?
+    @State private var viewingAll: ViewAll?
     @State private var visible: Int?
     @Namespace private var sku
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    struct Opened: Identifiable { let id: String; let staple: Staple; let start: Int }
+    struct Opened: Identifiable { let id: String; let anchor: Anchor; let pieces: [StaplePiece]; let start: Int }
+    struct ViewAll: Identifiable { let id: String }
+
+    /// Every staple with its pieces, for the "View all" page. The Figma labels the white top
+    /// "Never basic tee" too, so it gets its own name there to keep the pills distinct.
+    private static var groups: [StapleGroup] {
+        anchors.map { anchor in
+            StapleGroup(id: anchor.id, name: anchor.id == "white-top" ? "White top" : anchor.name,
+                        pieces: StaplePiece.pieces(for: anchor.id, name: anchor.name, looks: anchor.staple.looks))
+        }
+    }
 
     /// A piece you own: its product shot, and looks that are built on that exact piece.
     struct Anchor: Identifiable {
@@ -1166,14 +1191,14 @@ private struct VoguePairSection: View {
         let anchors = Self.anchors
         let current = anchors.first { $0.id == selected }
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
-            EditSectionHeader(number: 3,
-                              title: Text("What to pair with?"),
-                              dek: "Pick a piece you already own. We'll show you what goes with it", genderSwitch: true, rule: false)
+            EditSectionHeader(number: 4,
+                              title: Text("Style Your Staples"),
+                              dek: "Pick a piece you already own. We'll show you what goes with it", rule: false)
             if let current {
                 tabs(anchors, current: current)
                     .transition(.opacity)
                 looks(current)
-                    .genderReload(.row(CGSize(width: 228, height: 279)))
+                    .genderReload(.row(CGSize(width: StaplePieceCard.size.width, height: StaplePieceCard.size.height + 64)))
                     .id(current.id)
                     .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 28)), removal: .opacity))
             } else {
@@ -1183,7 +1208,10 @@ private struct VoguePairSection: View {
             }
         }
         .sensoryFeedback(.selection, trigger: selected)
-        .readerCover(item: $opened) { StapleLookbookView(staple: $0.staple, start: $0.start) }
+        .readerCover(item: $opened) {
+            StaplePieceViewer(staple: $0.anchor.name, pieces: $0.pieces, start: $0.start, groups: Self.groups, stapleID: $0.anchor.id)
+        }
+        .readerCover(item: $viewingAll) { StapleAllView(groups: Self.groups, start: $0.id) }
         #if DEBUG
         // Debug builds accept `-pairSelect <anchor id>` (leathers, graphic-tee, kurti…) to open on its looks.
         .task {
@@ -1191,6 +1219,18 @@ private struct VoguePairSection: View {
             if let i = args.firstIndex(of: "-pairSelect"), i + 1 < args.count {
                 try? await Task.sleep(for: .seconds(4))
                 choose(args[i + 1])
+                // `-openPiece <n>` then opens that piece full screen.
+                if let j = args.firstIndex(of: "-openPiece"), j + 1 < args.count, let n = Int(args[j + 1]),
+                   let anchor = Self.anchors.first(where: { $0.id == args[i + 1] }) {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    let pieces = StaplePiece.pieces(for: anchor.id, name: anchor.name, looks: anchor.staple.looks)
+                    opened = Opened(id: "debug", anchor: anchor, pieces: pieces, start: n)
+                }
+                // `-viewAllStaples` opens the View all page on that staple.
+                if args.contains("-viewAllStaples") {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    viewingAll = ViewAll(id: args[i + 1])
+                }
             }
         }
         #endif
@@ -1305,21 +1345,31 @@ private struct VoguePairSection: View {
         .scrollIndicators(.hidden)
     }
 
+    /// The pieces to wear with the chosen staple, each cropped to just the piece.
     private func looks(_ anchor: Anchor) -> some View {
-        let staple = anchor.staple
+        let pieces = StaplePiece.pieces(for: anchor.id, name: anchor.name, looks: anchor.staple.looks)
         return VStack(alignment: .leading, spacing: R.spacingSpace24) {
             ScrollView(.horizontal) {
-                LazyHStack(spacing: EditLayout.cardGap) {
-                    ForEach(Array(staple.looks.enumerated()), id: \.offset) { i, look in
-                        Button { opened = Opened(id: "\(anchor.id)-\(i)", staple: staple, start: i) } label: {
-                            PairLookCard(art: look, title: PairLookCard.names[look.image ?? ""] ?? "With the \(anchor.name.lowercased())")
+                LazyHStack(alignment: .top, spacing: R.spacingSpace12) {
+                    ForEach(Array(pieces.enumerated()), id: \.offset) { i, piece in
+                        Button { opened = Opened(id: "\(anchor.id)-\(i)", anchor: anchor, pieces: pieces, start: i) } label: {
+                            StaplePieceCard(piece: piece)
                         }
                         .slideIn(i)
                         .buttonStyle(PressableStyle())
                         .id(i)
-                        .accessibilityLabel(PairLookCard.names[look.image ?? ""] ?? "Look \(i + 1) with the \(anchor.name.lowercased())")
-                        .accessibilityHint("Opens the lookbook")
+                        .accessibilityLabel("\(piece.name), \(piece.brand)")
+                        .accessibilityValue(piece.price)
+                        .accessibilityHint("Opens the piece full screen")
                     }
+                    Button { viewingAll = ViewAll(id: anchor.id) } label: {
+                        StapleViewAllTile(count: Self.groups.reduce(0) { $0 + $1.pieces.count })
+                    }
+                    .slideIn(pieces.count)
+                    .buttonStyle(PressableStyle())
+                    .id(pieces.count)
+                    .accessibilityLabel("View all looks")
+                    .accessibilityHint("Shows every look for every staple")
                 }
                 .scrollTargetLayout()
             }
@@ -1327,7 +1377,7 @@ private struct VoguePairSection: View {
             .defaultScrollAnchor(.leading)
             .scrollPosition(id: $visible, anchor: .leading)
 
-            EditProgress(index: visible ?? 0, count: staple.looks.count)
+            EditProgress(index: min(visible ?? 0, pieces.count - 1), count: pieces.count)
         }
     }
 }
@@ -1366,37 +1416,36 @@ private struct Wiggle: ViewModifier {
     }
 }
 
-/// One look built on the chosen piece (Figma 7485:6478): the photo, a black fade at the foot and
-/// the look's name in Be Vietnam SemiBold 16.
-private struct PairLookCard: View {
-    let art: Art
-    let title: String
-
-    /// Names for looks that have one; others fall back to "With the <piece>".
-    static let names: [String: String] = [
-        "vogue_pair_leathers_look_1": "Pinstripe & leather",
-        "vogue_pair_leathers_look_2": "Leather bustier dress",
-        "vogue_pair_leathers_look_3": "Chocolate leather wide-legs",
-        "vogue_pair_leathers_look_4": "Stripes over leather",
-    ]
-
-    var body: some View {
-        VoguePhotoCard(art: art, width: 228, height: 279, scrimReach: 0.3, shade: 0.75, tint: 0, frosted: false) {
-            Text(title)
-                .font(EditType.text(16, .semibold, relativeTo: .headline))
-                .tracking(-0.16)
-                .foregroundStyle(M.textWhite)
-                .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 16)
-        }
-    }
-}
-
 // MARK: - 04 Cop these looks
 
 private struct VogueLooksSection: View {
     @State private var visible: String?
+    @AppStorage("edit.gender") private var gender = "women"
+
+    /// The looks for the page's Women / Men filter.
+    static func looks(for gender: String) -> [Look] { gender == "men" ? menLooks : looks }
+
+    /// Menswear street looks, tagged where each piece sits in the photo.
+    static let menLooks: [Look] = [
+        Look(title: "Camel and calm", art: Art("staple_blazer_3", [0xB07A4A, 0xE9E2D4, 0xC9CCC4], seed: 831), spots: [
+            Hotspot(x: 0.5, y: 0.31, item: "Heavyweight white tee", price: "₹999"),
+            Hotspot(x: 0.32, y: 0.42, item: "Camel wool overcoat", price: "₹6,490"),
+            Hotspot(x: 0.22, y: 0.64, item: "Washed grey slim jeans", price: "₹2,799"),
+            Hotspot(x: 0.84, y: 0.88, item: "Two-tone high-tops", price: "₹3,999"),
+        ]),
+        Look(title: "Denim and khakis", art: Art("staple_denim_1", [0x3E5C7E, 0xA08850, 0xE9E9E9], seed: 833), spots: [
+            Hotspot(x: 0.22, y: 0.1, item: "Sherpa-lined denim jacket", price: "₹3,499"),
+            Hotspot(x: 0.5, y: 0.22, item: "Longline white tee", price: "₹799"),
+            Hotspot(x: 0.42, y: 0.5, item: "Tapered khaki chinos", price: "₹1,999"),
+            Hotspot(x: 0.4, y: 0.84, item: "White leather sneakers", price: "₹7,999"),
+        ]),
+        Look(title: "Tan biker, sharp tie", art: Art("palette_midnight-olive_3", [0x7A4A34, 0x8FB0D0, 0x1E2A45], seed: 835), spots: [
+            Hotspot(x: 0.36, y: 0.22, item: "Round gold-frame sunglasses", price: "₹1,890"),
+            Hotspot(x: 0.36, y: 0.52, item: "Chambray shirt & navy tie", price: "₹2,290"),
+            Hotspot(x: 0.7, y: 0.68, item: "Tan leather biker jacket", price: "₹5,499"),
+            Hotspot(x: 0.11, y: 0.79, item: "Gold link watch", price: "₹3,250"),
+        ]),
+    ]
 
     /// Street-style looks from the Figma, each tagged where the Figma puts its dots.
     static let looks: [Look] = [
@@ -1421,32 +1470,37 @@ private struct VogueLooksSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
-            EditSectionHeader(number: 4, title: Text("Cop these looks"),
-                              dek: "Three outfits spotted on the street. Tap a dot to shop the exact piece, or something close to it.", genderSwitch: true)
+            EditSectionHeader(number: 6, title: Text("Cop these looks"),
+                              dek: "Three outfits spotted on the street. Tap a dot to shop the exact piece, or something close to it.")
+            let looks = Self.looks(for: gender)
             ScrollView(.horizontal) {
                 LazyHStack(spacing: EditLayout.cardGap) {
-                    ForEach(Array(Self.looks.enumerated()), id: \.element.id) { i, look in
-                        VogueLookCard(look: look).slideIn(i).id(look.id)
+                    ForEach(Array(looks.enumerated()), id: \.element.id) { i, look in
+                        VogueLookCard(look: look, all: looks).slideIn(i).id(look.id)
                     }
                 }
                 .scrollTargetLayout()
             }
             .carousel()
+            .id(gender)
             .genderReload(.row(CGSize(width: 270, height: 400)))
             .defaultScrollAnchor(.leading)
             .scrollPosition(id: $visible, anchor: .leading)
 
-            EditProgress(index: Self.looks.firstIndex { $0.id == visible } ?? 0, count: Self.looks.count)
+            EditProgress(index: looks.firstIndex { $0.id == visible } ?? 0, count: looks.count)
         }
     }
 }
 
 private struct VogueLookCard: View {
     let look: Look
-    @State private var shopping: Shopping?
+    /// Every look in the row, so the full-screen pager can swipe on to the next.
+    var all: [Look] = VogueLooksSection.looks
+    @State private var focusing: Focusing?
     @State private var tryingOn = false
+    @Namespace private var zoom
 
-    struct Shopping: Identifiable { let id: Int }
+    struct Focusing: Identifiable { let id: Int }
 
     var body: some View {
         VoguePhotoCard(art: look.art, width: 270, height: 400, scrimReach: 0.3, shade: 0.75, tint: 0.7, frosted: false) {
@@ -1459,8 +1513,8 @@ private struct VogueLookCard: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
-                // Opens the look's shopping sheet on its first piece; a plain underlined link, no chevron.
-                Button { shopping = Shopping(id: 0) } label: {
+                // Opens the look full screen on its first piece; a plain underlined link, no chevron.
+                Button { focusing = Focusing(id: 0) } label: {
                     Text("Shop the look")
                         .font(EditType.text(13, .medium, relativeTo: .subheadline))
                         .foregroundStyle(M.textWhite)
@@ -1479,7 +1533,7 @@ private struct VogueLookCard: View {
         .overlay {
             GeometryReader { geo in
                 ForEach(Array(look.spots.enumerated()), id: \.element.id) { i, spot in
-                    HotspotPin(spot: spot, isActive: shopping?.id == i, dot: true) { shopping = Shopping(id: i) }
+                    HotspotPin(spot: spot, isActive: focusing?.id == i, dot: true) { focusing = Focusing(id: i) }
                         .position(x: spot.x * geo.size.width, y: spot.y * geo.size.height)
                 }
             }
@@ -1488,13 +1542,29 @@ private struct VogueLookCard: View {
             // Figma: 10pt in from the top-right corner (the 44pt tap frame adds 9pt above).
             TryOnButton { tryingOn = true }.padding(.top, 3).padding(.trailing, 10)
         }
+        // Tapping the photo itself opens the look full screen.
+        .contentShape(Rectangle())
+        .onTapGesture { focusing = Focusing(id: 0) }
+        .zoomSource(id: look.id, in: zoom)
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-        .sensoryFeedback(.impact(weight: .light), trigger: shopping?.id)
+        .sensoryFeedback(.impact(weight: .light), trigger: focusing?.id)
         .sensoryFeedback(.impact(weight: .medium), trigger: tryingOn)
-        .sheet(item: $shopping) { ShopTheLookView(look: look, start: $0.id) }
+        .readerCover(item: $focusing) { LookFocusView(looks: all, look: all.firstIndex { $0.id == look.id } ?? 0, start: $0.id).zoomTransition(id: look.id, in: zoom) }
         .fullScreenCover(isPresented: $tryingOn) { VirtualTryOnView(title: look.title, art: look.art) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(look.title)
+        .accessibilityAction(named: "Open full screen") { focusing = Focusing(id: 0) }
+        #if DEBUG
+        // Debug builds accept `-focusLook <spot>` to open the first look full screen on that piece.
+        .task {
+            let args = ProcessInfo.processInfo.arguments
+            if look.id == VogueLooksSection.looks.first?.id, let i = args.firstIndex(of: "-focusLook"),
+               i + 1 < args.count, let spot = Int(args[i + 1]) {
+                try? await Task.sleep(for: .seconds(3))
+                focusing = Focusing(id: spot)
+            }
+        }
+        #endif
     }
 }
 
@@ -1521,10 +1591,10 @@ private struct VoguePlansSection: View {
     var body: some View {
         let covers = covers
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
-            EditSectionHeader(number: 5,
+            EditSectionHeader(number: 9,
                               title: Text("Fits for every plan"),
                               dek: "Fresh in this week from the labels on your high street",
-                              genderSwitch: true, rule: false)
+                              rule: false)
             ScrollView(.horizontal) {
                 LazyHStack(spacing: EditLayout.cardGap) {
                     ForEach(covers, id: \.plan.id) { item in
@@ -1626,9 +1696,9 @@ private struct VoguePaletteSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
-            EditSectionHeader(number: 7,
+            EditSectionHeader(number: 12,
                               title: Text("Pick your palette"),
-                              dek: "Start from a colour, not a garment. Choose a mood and we'll build the outfit around it.", genderSwitch: true, rule: false)
+                              dek: "Start from a colour, not a garment. Choose a mood and we'll build the outfit around it.", rule: false)
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: R.spacingSpace16) {
                     ForEach(palettes) { palette in
@@ -1789,7 +1859,7 @@ private struct VogueBentoSection: View {
     var body: some View {
         let l = labels
         VStack(alignment: .leading, spacing: EditLayout.headerGap) {
-            EditSectionHeader(number: 6, title: Text("Homegrown heroes"), rule: false)
+            EditSectionHeader(number: 11, title: Text("Homegrown heroes"), rule: false)
             GeometryReader { g in
                 // Figma widths: 234 large, 112 small, on a 358 board.
                 let small = (g.size.width - Self.gap) * 112 / 346
@@ -1866,8 +1936,9 @@ private struct VogueIndexSection: View {
     let jump: (Int) -> Void
 
     private static let entries: [(Int, String)] = [
-        (1, "Brand stories"), (2, "Hot off the rack"), (3, "What to pair with"), (4, "Cop these looks"),
-        (5, "Fits for every plan"), (6, "Homegrown heroes"), (7, "Pick your palette"),
+        (1, "Brand stories"), (2, "Hot off the rack"), (3, "I want to feel…"), (4, "Style Your Staples"),
+        (5, "Swap this for that"), (6, "Cop these looks"), (7, "Same look, your price"), (8, "Straight off the feed"),
+        (9, "Fits for every plan"), (10, "If you like…"), (11, "Homegrown heroes"), (12, "Pick your palette"),
     ]
 
     var body: some View {
