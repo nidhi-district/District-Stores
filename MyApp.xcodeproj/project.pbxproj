@@ -54,9 +54,6 @@
 		A100000000000000000000F9 /* ProductDropsCheckout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000F9 /* ProductDropsCheckout.swift */; };
 		A100000000000000000000FA /* ProductDropsSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000FA /* ProductDropsSheets.swift */; };
 		A100000000000000000000FB /* ProductDropsSuccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000FB /* ProductDropsSuccess.swift */; };
-		A100000000000000000000FC /* GiftVouchersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000FC /* GiftVouchersView.swift */; };
-		A100000000000000000000FD /* GiftVoucherDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000FD /* GiftVoucherDetail.swift */; };
-		A100000000000000000001A1 /* VirtualTryOnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001A1 /* VirtualTryOnView.swift */; };
 		A100000000000000000001B1 /* StoreProductView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001B1 /* StoreProductView.swift */; };
 		A100000000000000000001B3 /* StoreDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001B3 /* StoreDetailView.swift */; };
 		A100000000000000000001B4 /* TryOnEducation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001B4 /* TryOnEducation.swift */; };
@@ -67,6 +64,14 @@
 		A100000000000000000001C3 /* HubsListingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001C3 /* HubsListingView.swift */; };
 		A100000000000000000001C4 /* HubDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001C4 /* HubDetailView.swift */; };
 		A100000000000000000001C5 /* HubDetailSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001C5 /* HubDetailSheets.swift */; };
+		A100000000000000000001C8 /* HubArrival.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001C8 /* HubArrival.swift */; };
+		A100000000000000000001E0 /* HomeRails.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001E0 /* HomeRails.swift */; };
+		A1000000000000000000D1A7 /* DistrictMapsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000D1A7 /* DistrictMapsView.swift */; };
+		A1000000000000000000D1A8 /* DistrictAerobar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000D1A8 /* DistrictAerobar.swift */; };
+		A100000000000000000001C7 /* HubPagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001C7 /* HubPagerView.swift */; };
+		A100000000000000000001D1 /* MallCatalogData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001D1 /* MallCatalogData.swift */; };
+		A100000000000000000001D2 /* MallBrandWall.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001D2 /* MallBrandWall.swift */; };
+		A100000000000000000001D3 /* MallDiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001D3 /* MallDiscoveryView.swift */; };
 		A100000000000000000001B2 /* spdp_discount.gif in Resources */ = {isa = PBXBuildFile; fileRef = A200000000000000000001B2 /* spdp_discount.gif */; };
 		B10000000000000000000001 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = B40000000000000000000001 /* Lottie */; };
 		B10000000000000000000002 /* tick.json in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* tick.json */; };
@@ -121,9 +126,6 @@
 		A200000000000000000000F9 /* ProductDropsCheckout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDropsCheckout.swift; sourceTree = "<group>"; };
 		A200000000000000000000FA /* ProductDropsSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDropsSheets.swift; sourceTree = "<group>"; };
 		A200000000000000000000FB /* ProductDropsSuccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDropsSuccess.swift; sourceTree = "<group>"; };
-		A200000000000000000000FC /* GiftVouchersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftVouchersView.swift; sourceTree = "<group>"; };
-		A200000000000000000000FD /* GiftVoucherDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftVoucherDetail.swift; sourceTree = "<group>"; };
-		A200000000000000000001A1 /* VirtualTryOnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualTryOnView.swift; sourceTree = "<group>"; };
 		A200000000000000000001B1 /* StoreProductView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreProductView.swift; sourceTree = "<group>"; };
 		A200000000000000000001B3 /* StoreDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreDetailView.swift; sourceTree = "<group>"; };
 		A200000000000000000001B4 /* TryOnEducation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TryOnEducation.swift; sourceTree = "<group>"; };
@@ -134,6 +136,14 @@
 		A200000000000000000001C3 /* HubsListingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubsListingView.swift; sourceTree = "<group>"; };
 		A200000000000000000001C4 /* HubDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubDetailView.swift; sourceTree = "<group>"; };
 		A200000000000000000001C5 /* HubDetailSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubDetailSheets.swift; sourceTree = "<group>"; };
+		A200000000000000000001C8 /* HubArrival.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubArrival.swift; sourceTree = "<group>"; };
+		A200000000000000000001E0 /* HomeRails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRails.swift; sourceTree = "<group>"; };
+		A2000000000000000000D1A7 /* DistrictMapsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictMapsView.swift; sourceTree = "<group>"; };
+		A2000000000000000000D1A8 /* DistrictAerobar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAerobar.swift; sourceTree = "<group>"; };
+		A200000000000000000001C7 /* HubPagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubPagerView.swift; sourceTree = "<group>"; };
+		A200000000000000000001D1 /* MallCatalogData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallCatalogData.swift; sourceTree = "<group>"; };
+		A200000000000000000001D2 /* MallBrandWall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallBrandWall.swift; sourceTree = "<group>"; };
+		A200000000000000000001D3 /* MallDiscoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MallDiscoveryView.swift; sourceTree = "<group>"; };
 		A200000000000000000001B2 /* spdp_discount.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = spdp_discount.gif; sourceTree = "<group>"; };
 		B20000000000000000000002 /* tick.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = tick.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -185,9 +195,6 @@
 				A200000000000000000000F9 /* ProductDropsCheckout.swift */,
 				A200000000000000000000FA /* ProductDropsSheets.swift */,
 				A200000000000000000000FB /* ProductDropsSuccess.swift */,
-				A200000000000000000000FC /* GiftVouchersView.swift */,
-				A200000000000000000000FD /* GiftVoucherDetail.swift */,
-				A200000000000000000001A1 /* VirtualTryOnView.swift */,
 				A200000000000000000001B1 /* StoreProductView.swift */,
 				A200000000000000000001B3 /* StoreDetailView.swift */,
 				A200000000000000000001B4 /* TryOnEducation.swift */,
@@ -198,6 +205,14 @@
 				A200000000000000000001C3 /* HubsListingView.swift */,
 				A200000000000000000001C4 /* HubDetailView.swift */,
 				A200000000000000000001C5 /* HubDetailSheets.swift */,
+				A200000000000000000001C8 /* HubArrival.swift */,
+				A200000000000000000001E0 /* HomeRails.swift */,
+				A2000000000000000000D1A7 /* DistrictMapsView.swift */,
+				A2000000000000000000D1A8 /* DistrictAerobar.swift */,
+				A200000000000000000001C7 /* HubPagerView.swift */,
+				A200000000000000000001D1 /* MallCatalogData.swift */,
+				A200000000000000000001D2 /* MallBrandWall.swift */,
+				A200000000000000000001D3 /* MallDiscoveryView.swift */,
 				A200000000000000000001B2 /* spdp_discount.gif */,
 				A20000000000000000000040 /* VogueExploreView.swift */,
 				A20000000000000000000047 /* VogueNewspaperView.swift */,
@@ -374,9 +389,6 @@
 				A100000000000000000000F9 /* ProductDropsCheckout.swift in Sources */,
 				A100000000000000000000FA /* ProductDropsSheets.swift in Sources */,
 				A100000000000000000000FB /* ProductDropsSuccess.swift in Sources */,
-				A100000000000000000000FC /* GiftVouchersView.swift in Sources */,
-				A100000000000000000000FD /* GiftVoucherDetail.swift in Sources */,
-				A100000000000000000001A1 /* VirtualTryOnView.swift in Sources */,
 				A100000000000000000001B1 /* StoreProductView.swift in Sources */,
 				A100000000000000000001B3 /* StoreDetailView.swift in Sources */,
 				A100000000000000000001B4 /* TryOnEducation.swift in Sources */,
@@ -387,6 +399,14 @@
 				A100000000000000000001C3 /* HubsListingView.swift in Sources */,
 				A100000000000000000001C4 /* HubDetailView.swift in Sources */,
 				A100000000000000000001C5 /* HubDetailSheets.swift in Sources */,
+				A100000000000000000001C8 /* HubArrival.swift in Sources */,
+				A100000000000000000001E0 /* HomeRails.swift in Sources */,
+				A1000000000000000000D1A7 /* DistrictMapsView.swift in Sources */,
+				A1000000000000000000D1A8 /* DistrictAerobar.swift in Sources */,
+				A100000000000000000001C7 /* HubPagerView.swift in Sources */,
+				A100000000000000000001D1 /* MallCatalogData.swift in Sources */,
+				A100000000000000000001D2 /* MallBrandWall.swift in Sources */,
+				A100000000000000000001D3 /* MallDiscoveryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,7 +478,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -490,7 +510,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

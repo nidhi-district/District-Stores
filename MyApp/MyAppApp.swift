@@ -18,7 +18,7 @@ struct MyAppApp: App {
                         .zIndex(1)
                 }
             }
-            .preferredColorScheme(.dark)
+            // Dark everywhere except the hub pages; DistrictRootView sets the scheme, see SystemAppearance.
         }
     }
 }

@@ -307,7 +307,7 @@ struct ProductDropsBanner: View {
                                        .init(color: .clear, location: 0.45), .init(color: P.ink.opacity(0.92), location: 0.82)],
                                startPoint: .top, endPoint: .bottom)
             }
-            .overlay(alignment: .bottomLeading) { copy }
+            .overlay(alignment: .bottom) { copy }
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: R.cornerRadiusCorner24, bottomTrailingRadius: R.cornerRadiusCorner24))
             .contentShape(Rectangle())
             .onTapGesture(perform: action)
@@ -317,17 +317,25 @@ struct ProductDropsBanner: View {
             .accessibilityHint("Opens the drops")
     }
 
+    /// Poster layout: everything centred, the kicker between two short rules.
     private var copy: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace8) {
-            Text("Product drops")
-                .dropFont("Medium", 12)
-                .tracking(1.2)
-                .textCase(.uppercase)
-                .foregroundStyle(M.textPrimary)
-            CrazyDropsTitle(size: 40)
+        VStack(spacing: R.spacingSpace8) {
+            HStack(spacing: R.spacingSpace8) {
+                rule
+                Text("Product drops")
+                    .dropFont("Medium", 12)
+                    .tracking(2.4)
+                    .textCase(.uppercase)
+                    .foregroundStyle(M.textPrimary)
+                    .fixedSize()
+                rule
+            }
+            CrazyDropsTitle(size: 48)
             Text("Reserve the hottest sneakers now, pick them up in store.")
                 .backstageText(.body3)
                 .foregroundStyle(P.white70)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 260)
             HStack(spacing: R.spacingSpace4) {
                 Text("Explore drops")
                 Image(systemName: "arrow.right")
@@ -340,8 +348,13 @@ struct ProductDropsBanner: View {
             .background(M.surfaceInverse, in: Capsule())
             .padding(.top, R.spacingSpace8)
         }
+        .frame(maxWidth: .infinity)
         .padding(R.spacingSpace20)
         .padding(.bottom, R.spacingSpace12)
+    }
+
+    private var rule: some View {
+        Rectangle().fill(M.textPrimary.opacity(0.5)).frame(width: 24, height: R.stroke1Px)
     }
 }
 
@@ -371,8 +384,11 @@ struct StoresBannerCarousel<Page: View>: View {
         .scrollIndicators(.hidden)
         .scrollPosition(id: $current)
         .overlay(alignment: .bottom) {
-            DropPageDots(count: count, current: current ?? 0)
-                .padding(.bottom, R.spacingSpace12)
+            // A single banner gets no page pill.
+            if count > 1 {
+                DropPageDots(count: count, current: current ?? 0)
+                    .padding(.bottom, R.spacingSpace12)
+            }
         }
     }
 }

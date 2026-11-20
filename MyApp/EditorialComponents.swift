@@ -400,7 +400,11 @@ struct BrandMark: View {
     var size: CGFloat = 40
 
     /// Logos that are already square app-icon artwork and fill the tile edge to edge.
-    private static let fullBleed: Set<String> = ["logo_bonkers_corner", "logo_snitch", "logo_the_souled_store"]
+    private static let fullBleed: Set<String> = ["logo_bonkers_corner", "logo_snitch", "logo_the_souled_store",
+                                                 // Stores home, cut from the app's own tiles.
+                                                 "logo_anta", "logo_joyalukkas", "logo_shoppers_stop", "logo_pantaloons",
+                                                 "logo_limited_edt", "logo_reliance_trends", "logo_united_colors_of_benetton",
+                                                 "logo_puma"]
     /// White logos that need a dark tile.
     private static let onDark: Set<String> = ["logo_nicobar"]
 

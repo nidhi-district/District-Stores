@@ -11,9 +11,14 @@ private typealias R = BackstageTokens.Responsive
 /// and nothing inside the scroll view changes layout while it scrolls.
 struct HubDetailView: View {
     let hub: Hub
+    /// Only set when the page sits inside the (currently disabled) `HubPagerView`.
+    var pager: HubPagerState? = nil
+    /// Passed in by the pager, whose sideways scroll view doesn't hand its pages a reliable safe area.
+    var pinnedSafeTop: CGFloat? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var tab: HubTab
     @State private var scroll = HubScrollState()
     @State private var infoHeight: CGFloat = 320
@@ -34,9 +39,14 @@ struct HubDetailView: View {
     /// Gap between the sticking line and the hub's title at rest (Figma: 169 − 123).
     private static let infoTop: CGFloat = 46
 
-    init(hub: Hub) {
+    init(hub: Hub, pager: HubPagerState? = nil, safeTop: CGFloat? = nil, opensFloors: Bool = false, opensSearch: Bool = false,
+         startTab: HubTab? = nil) {
         self.hub = hub
-        var first = hub.tabs.first ?? .restaurants
+        _showsFloors = State(initialValue: opensFloors || HubDetailView.launchFloors)
+        if opensSearch { _cover = State(initialValue: .search) }
+        self.pager = pager
+        pinnedSafeTop = safeTop
+        var first = startTab.flatMap { hub.tabs.contains($0) ? $0 : nil } ?? hub.tabs.first ?? .restaurants
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if let i = args.firstIndex(of: "-hubTab"), i + 1 < args.count,
@@ -49,7 +59,7 @@ struct HubDetailView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let safeTop = geo.safeAreaInsets.top
+            let safeTop = pinnedSafeTop ?? geo.safeAreaInsets.top
             ZStack(alignment: .top) {
                 M.backgroundPrimary
                 glow
@@ -73,6 +83,13 @@ struct HubDetailView: View {
                     .zIndex(1)
                 }
 
+                if floatsTitle {
+                    HubFloatingTitle(title: hub.name, scroll: scroll,
+                                     restCenter: safeTop + Self.pinOffset + Self.infoTop + 14,
+                                     pinnedCenter: safeTop + 34,
+                                     hidden: showsFloors)
+                        .zIndex(2)
+                }
                 header
                     .padding(.top, safeTop + 12)
                     .zIndex(2)
@@ -82,30 +99,37 @@ struct HubDetailView: View {
             .ignoresSafeArea()
         }
         .background(M.backgroundPrimary.ignoresSafeArea())
-        .preferredColorScheme(.dark)
-        .sheet(item: $infoSheet) { HubInfoSheetView(kind: $0, hub: hub) }
-        .readerCover(item: $cover) { _ in HubSearchView(hub: hub) }
-        .readerCover(item: $storePage) { StoreDetailView(detail: $0) }
+        // Follows the system's Light/Dark choice. What opens from here (info sheets, search, a store) stays dark for now.
+        .preferredColorScheme(SystemAppearance.shared.scheme)
+        .sheet(item: $infoSheet) { HubInfoSheetView(kind: $0, hub: hub).preferredColorScheme(.dark) }
+        .sheet(item: $cover) { _ in HubSearchView(hub: hub) }
+        .readerCover(item: $storePage) { StoreDetailView(detail: $0).preferredColorScheme(.dark) }
     }
 
+    /// One line that fits the header: a single title travels up and sticks. Longer names wrap at rest and crossfade instead.
+    private var floatsTitle: Bool { hub.name.count <= 24 }
+
     private func openFloors() {
+        pager?.setFloorsOpen(true, from: hub.id)
         withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.46, dampingFraction: 0.88)) { showsFloors = true }
     }
 
     private func closeFloors() {
+        pager?.setFloorsOpen(false, from: hub.id)
         withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.36, dampingFraction: 1)) { showsFloors = false }
     }
 
     // MARK: Background
 
-    /// Figma "Dominant Colour Glow in background" at 20%.
+    /// Figma "Dominant Colour Glow in background", in the colour `HubGlow` reads from the hero photo: 25% in dark mode, 30% in light.
     private var glow: some View {
         // Drawn as an overlay: the ellipse is wider than the screen and mustn't widen the page's layout.
         Color.clear
             .overlay(alignment: .top) {
                 Ellipse()
-                    .fill(hub.glow.opacity(0.2))
+                    .fill(HubGlow.color(for: hub.hero).opacity(colorScheme == .dark ? 0.25 : 0.3))
                     .frame(width: 540, height: 678)
+                    // Figma's blur 150: Figma's blur value is twice SwiftUI's radius.
                     .blur(radius: 75)
                     .offset(y: 300)
             }
@@ -121,11 +145,15 @@ struct HubDetailView: View {
                 if showsFloors { closeFloors() } else { dismiss() }
             }
             ZStack {
-                HubHeaderTitle(title: hub.name, scroll: scroll, hidden: showsFloors)
+                if floatsTitle {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                } else {
+                    HubHeaderTitle(title: hub.name, scroll: scroll, hidden: showsFloors)
+                }
                 if showsFloors {
                     Text("Floors")
                         .backstageText(.hubTitle2)
-                        .foregroundStyle(M.hubPureWhite)
+                        .foregroundStyle(M.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityAddTraits(.isHeader)
                         .transition(.opacity.combined(with: .offset(y: 8)))
@@ -159,7 +187,7 @@ struct HubDetailView: View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    HubInfoBlock(hub: hub, sheet: $infoSheet)
+                    HubInfoBlock(hub: hub, sheet: $infoSheet, floatsTitle: floatsTitle)
                         .padding(.top, hub.brandLogo == nil ? Self.infoTop : Self.infoTop - 36)
                         .padding(.bottom, R.spacingSpace24)
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
@@ -192,11 +220,18 @@ struct HubDetailView: View {
             .scrollTargetBehavior(HubSheetSnap(stick: infoHeight))
             // Rounds the top so rows passing under the stuck tabs never show through its corners.
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: R.cornerRadiusCorner24, topTrailingRadius: R.cornerRadiusCorner24))
-            .modifier(ExploreScrollTracker { [scroll] in scroll.update(y: -$0) })
-            .onChange(of: tab) {
-                // A shorter tab mustn't make the page jump: stay stuck at the top of the new tab.
-                if scroll.stickProgress == 1 { proxy.scrollTo("sheetTop", anchor: .top) }
-            }
+            .modifier(ExploreScrollTracker { [scroll, pager, id = hub.id] raw in
+                let y = -raw
+                scroll.update(y: y)
+                pager?.report(scroll: min(max(y, 0) / 110, 1), from: id)
+                // A deliberate pull that began at rest closes the page; a fling coming back up never does.
+                if y < -110, scroll.pullingFromRest, !scroll.closeRequested {
+                    scroll.closeRequested = true
+                    dismiss()
+                }
+            })
+            .modifier(HubDragTracker(scroll: scroll))
+            .modifier(HubTabScrollReset(tab: tab, stick: infoHeight, scroll: scroll))
             .task {
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-hubScrolled") {
@@ -228,6 +263,7 @@ struct HubDetailView: View {
     private var sheetBody: some View {
         switch hub.layout {
         case .full, .fewTabs:
+            // Tabs change by tapping only: Top finds is full of rails that scroll sideways, so a swipe here would fight them.
             // A ZStack so the outgoing tab fades in place while the new one comes in from the side it was tapped on.
             ZStack(alignment: .top) {
                 Group {
@@ -289,11 +325,17 @@ struct HubDetailView: View {
                 withAnimation(reduceMotion ? nil : .smooth(duration: 0.28)) { tab = item }
             } label: {
                 VStack(spacing: 6) {
-                    Image(item.icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 28, height: 28)
-                        .opacity(selected ? 1 : 0.8)
+                    Group {
+                        // The filled icons are drawn for a dark page; on a light one, their outline twins in the icon colour.
+                        if colorScheme == .dark {
+                            Image(item.icon).resizable()
+                        } else {
+                            Image(item.lineIcon).renderingMode(.template).resizable().foregroundStyle(M.iconPrimary)
+                        }
+                    }
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
+                    .opacity(selected ? 1 : 0.8)
                     Text(item.title)
                         .backstageText(.label3)
                         .foregroundStyle(selected ? M.textPrimary : M.textTertiary)
@@ -336,7 +378,7 @@ struct HubDetailView: View {
                             .frame(width: 109, height: 40)
                             .background {
                                 if selected {
-                                    Capsule().fill(Color.white.opacity(0.08))
+                                    Capsule().fill(M.surfaceTransparent)
                                     Capsule().strokeBorder(M.borderIntense, lineWidth: R.stroke1Px)
                                 }
                             }
@@ -428,10 +470,10 @@ struct HubDetailView: View {
     private var actionItems: [HubActionBar.Item] {
         var items: [HubActionBar.Item] = []
         if hub.hasFindInHub {
-            items.append(.init(icon: "hub_ic_route", size: 22, title: "Find in hub", action: openFloors))
+            items.append(.init(icon: "hub_ic_route", size: 22, title: "Find in hub", tint: M.iconTertiary, action: openFloors))
         }
         items.append(.init(icon: "hub_ic_search", size: 22, title: "Search") { cover = .search })
-        items.append(.init(icon: "hub_ic_ellipsis", size: 20, title: "More") { setMore(!showsMore) })
+        items.append(.init(icon: "hub_ic_ellipsis", size: 20, title: "More", tint: M.iconTertiary) { setMore(!showsMore) })
         return items
     }
 
@@ -451,7 +493,7 @@ struct HubDetailView: View {
         .padding(R.spacingSpace12)
         .frame(width: 169)
         .background(M.surfaceSecondary, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
-        .shadow(color: .black.opacity(0.3), radius: 20, y: 4)
+        .shadow(color: M.effectsShadowM, radius: 20, y: 4)
     }
 
     private func moreRow(icon: String, size: CGFloat, title: String, action: @escaping () -> Void) -> some View {
@@ -461,13 +503,15 @@ struct HubDetailView: View {
         } label: {
             HStack(spacing: R.spacingSpace12) {
                 Image(icon)
+                    .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
+                    .foregroundStyle(M.iconPrimary)
                     .frame(width: size, height: size)
                     .frame(width: 24, height: 24)
                 Text(title)
                     .backstageText(.hubLabel1)
-                    .foregroundStyle(Color(hex: 0xFAFAFA))
+                    .foregroundStyle(M.textPrimary)
                     .lineLimit(1)
                     .fixedSize()
             }
@@ -531,20 +575,33 @@ private enum HubCover: String, Identifiable {
 /// below read them, so a scroll frame touches those views and nothing else.
 @Observable
 private final class HubScrollState {
+    private(set) var scrollY: CGFloat = 0
     private(set) var overscroll: CGFloat = 0
     private(set) var heroLift: CGFloat = 0
     private(set) var titleProgress: CGFloat = 0
     /// 0 at rest, 1 once the sheet has reached the top.
     private(set) var stickProgress: CGFloat = 0
     private(set) var compactBar = false
+    /// Side margin of the sheet: inset from the screen at rest, closing to the edges by the time it sticks.
+    private(set) var sheetInset: CGFloat = HubScrollState.restInset
+    static let restInset: CGFloat = 8
     /// Scroll distance at which the sheet sticks.
     @ObservationIgnored var stick: CGFloat = 320
+    @ObservationIgnored var closeRequested = false
+    /// A finger is down, and it landed with the page at rest.
+    @ObservationIgnored var pullingFromRest = false
 
     func update(y: CGFloat) {
+        set(\.scrollY, y)
         set(\.overscroll, max(-y, 0))
         set(\.heroLift, min(max(y, 0) * 0.18, 40))
         set(\.titleProgress, min(max((y - 56) / 36, 0), 1))
         set(\.stickProgress, min(max((y - (stick - 90)) / 90, 0), 1))
+        // Spread over the sheet's whole rise, eased at both ends, so the edges open steadily with the finger instead of
+        // snapping out in the last few points. Rounded to half points so a slow scroll doesn't redraw for invisible changes.
+        let rise = min(max(y / max(stick, 1), 0), 1)
+        let eased = rise * rise * (3 - 2 * rise)
+        set(\.sheetInset, ((Self.restInset * (1 - eased)) * 2).rounded() / 2)
         // Two thresholds, so resting near one point can't make the bar flicker.
         if !compactBar, stickProgress > 0.6 { compactBar = true }
         if compactBar, stickProgress < 0.3 { compactBar = false }
@@ -555,14 +612,54 @@ private final class HubScrollState {
     }
 }
 
-/// Stops the sheet landing halfway: a drag that ends between rest and stuck settles on the nearer one.
-private struct HubSheetSnap: ScrollTargetBehavior {
+/// Switching tabs while stuck starts the new tab at its top. It targets an offset because the lazy stack may have unloaded
+/// any view it could scroll to.
+private struct HubTabScrollReset: ViewModifier {
+    let tab: HubTab
     let stick: CGFloat
+    let scroll: HubScrollState
 
-    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
-        let y = target.rect.minY
-        guard y > 0, y < stick else { return }
-        target.rect.origin.y = y < stick / 2 ? 0 : stick
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.modifier(Reset(tab: tab, stick: stick, scroll: scroll))
+        } else {
+            content
+        }
+    }
+
+    @available(iOS 18.0, *)
+    private struct Reset: ViewModifier {
+        let tab: HubTab
+        let stick: CGFloat
+        let scroll: HubScrollState
+        @State private var position = ScrollPosition(idType: String.self)
+
+        func body(content: Content) -> some View {
+            content
+                .scrollPosition($position)
+                .onChange(of: tab) {
+                    if scroll.stickProgress == 1 { position.scrollTo(y: stick) }
+                }
+        }
+    }
+}
+
+/// Notes when a drag starts from the top of the page.
+private struct HubDragTracker: ViewModifier {
+    let scroll: HubScrollState
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.onScrollPhaseChange { _, phase in
+                if phase == .interacting {
+                    scroll.pullingFromRest = scroll.scrollY <= 1
+                } else {
+                    scroll.pullingFromRest = false
+                }
+            }
+        } else {
+            content
+        }
     }
 }
 
@@ -577,16 +674,62 @@ private struct HubSheetShape: Shape {
     }
 }
 
-/// The sheet's ground and edges. The width change is only a clip and a fill: the content keeps its layout as the sheet widens.
+/// The sheet's top edge as one line: up the top-left corner, across, and down the top-right corner, drawn half a point outside
+/// the sheet so a 1pt stroke sits fully outside it, like Figma's outside stroke.
+private struct HubSheetTopEdge: Shape {
+    var inset: CGFloat
+    var radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let r = rect.insetBy(dx: inset, dy: 0).insetBy(dx: -0.5, dy: -0.5)
+        let corner = radius + 0.5
+        var path = Path()
+        path.move(to: CGPoint(x: r.minX, y: r.minY + corner))
+        path.addArc(center: CGPoint(x: r.minX + corner, y: r.minY + corner), radius: corner,
+                    startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        path.addLine(to: CGPoint(x: r.maxX - corner, y: r.minY))
+        path.addArc(center: CGPoint(x: r.maxX - corner, y: r.minY + corner), radius: corner,
+                    startAngle: .degrees(270), endAngle: .degrees(360), clockwise: false)
+        return path
+    }
+}
+
+/// The sheet's ground and edges. The width change is only a clip and a fill: the content keeps its layout as the sheet widens,
+/// so nothing inside re-lays out while scrolling. The rounded top also carries the Figma sheet's lit edge (Hub Detail Page
+/// 14234:95210): a 1pt line outside the top, clear at both sides and white 40% at the middle.
 private struct HubSheetChrome: ViewModifier {
     let scroll: HubScrollState
     let radius: CGFloat
 
+    private static let edge = LinearGradient(stops: [.init(color: .white.opacity(0), location: 0),
+                                                     .init(color: .white.opacity(0.4), location: 0.5),
+                                                     .init(color: .white.opacity(0), location: 1)],
+                                             startPoint: .leading, endPoint: .trailing)
+
     func body(content: Content) -> some View {
-        let shape = HubSheetShape(inset: 8 * (1 - scroll.stickProgress), radius: radius)
+        let shape = HubSheetShape(inset: scroll.sheetInset, radius: radius)
         content
             .clipShape(shape)
             .background { shape.fill(M.backgroundPrimary) }
+            .overlay {
+                if radius > 0 {
+                    HubSheetTopEdge(inset: scroll.sheetInset, radius: radius)
+                        .stroke(Self.edge, lineWidth: 1)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+    }
+}
+
+/// Stops the sheet landing halfway: a drag that ends between rest and stuck settles on the nearer one.
+private struct HubSheetSnap: ScrollTargetBehavior {
+    let stick: CGFloat
+
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        let y = target.rect.minY
+        guard y > 0, y < stick else { return }
+        target.rect.origin.y = y < stick / 2 ? 0 : stick
     }
 }
 
@@ -617,6 +760,33 @@ private struct HubHeroView: View {
     }
 }
 
+/// The hub's name as one element from rest to stuck: it rises with the sheet, shrinks from 22pt to the header's 18pt on the
+/// way, and stops at the header. There's no second title fading in, so there's nothing to fall out of step.
+private struct HubFloatingTitle: View {
+    let title: String
+    let scroll: HubScrollState
+    let restCenter: CGFloat
+    let pinnedCenter: CGFloat
+    let hidden: Bool
+
+    var body: some View {
+        let travel = restCenter - pinnedCenter
+        let moved = min(scroll.scrollY, travel)
+        let progress = min(max(moved / travel, 0), 1)
+        Text(title)
+            .backstageText(.hubTitle1)
+            .foregroundStyle(M.textPrimary)
+            .lineLimit(1)
+            .fixedSize()
+            .scaleEffect(1 - progress * (1 - 18 / 22))
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+            .offset(y: restCenter - 14 - moved)
+            .opacity(hidden ? 0 : 1)
+            .allowsHitTesting(false)
+    }
+}
+
 private struct HubHeaderTitle: View {
     let title: String
     let scroll: HubScrollState
@@ -626,7 +796,7 @@ private struct HubHeaderTitle: View {
         let progress = hidden ? 0 : scroll.titleProgress
         Text(title)
             .backstageText(.hubTitle2)
-            .foregroundStyle(M.hubPureWhite)
+            .foregroundStyle(M.textPrimary)
             .lineLimit(1)
             .truncationMode(.tail)
             .frame(maxWidth: .infinity)
@@ -643,6 +813,8 @@ private struct HubActionBar: View {
         let icon: String
         let size: CGFloat
         let title: String
+        /// The icon's colour; the icons are drawn as templates so they follow light and dark mode.
+        var tint: Color = M.iconPrimary
         let action: () -> Void
     }
 
@@ -657,8 +829,10 @@ private struct HubActionBar: View {
                 Button(action: item.action) {
                     VStack(spacing: compact ? 0 : 7) {
                         Image(item.icon)
+                            .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
+                            .foregroundStyle(item.tint)
                             .frame(width: item.size, height: item.size)
                         Text(item.title)
                             .backstageText(.label3)
@@ -700,6 +874,8 @@ private struct HubMenuMotion: ViewModifier {
 private struct HubInfoBlock: View {
     let hub: Hub
     @Binding var sheet: HubInfoSheet?
+    /// The name is drawn by `HubFloatingTitle`; here it only holds the space.
+    let floatsTitle: Bool
 
     var body: some View {
         VStack(spacing: 18) {
@@ -715,10 +891,11 @@ private struct HubInfoBlock: View {
                 }
                 Text(hub.name)
                     .backstageText(.hubTitle1)
-                    .foregroundStyle(M.hubPureWhite)
+                    .foregroundStyle(M.textPrimary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, R.spacingSpace24)
+                    .opacity(floatsTitle ? 0 : 1)
                     .accessibilityAddTraits(.isHeader)
                 addressRow
                 statusRow
@@ -791,7 +968,9 @@ private struct HubInfoBlock: View {
                             statusText(status)
                                 .backstageText(.body3)
                             Image("hub_ic_hours_chev")
+                                .renderingMode(.template)
                                 .resizable()
+                                .foregroundStyle(M.iconTertiary)
                                 .frame(width: 4, height: 7)
                                 .rotationEffect(.degrees(90))
                         }
@@ -825,7 +1004,9 @@ private struct HubInfoBlock: View {
                 }
                 HStack(spacing: 6) {
                     Image(stat.icon)
+                        .renderingMode(.template)
                         .resizable()
+                        .foregroundStyle(M.iconSecondary)
                         .frame(width: 12, height: 12)
                     Text(stat.label)
                         .backstageText(.label2)
@@ -873,9 +1054,9 @@ private struct HubTopFinds: View {
     }
 
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: R.spacingSpace40) {
+        VStack(alignment: .leading, spacing: R.spacingSpace32) {
             buzzing
-            section("Best offers", chips: HubsData.offerFilters.map(\.title), selection: $offerFilter, chipHeight: 32) {
+            section("Best offers", chips: HubsData.offerFilters.map(\.title), selection: $offerFilter) {
                 rail(spacing: R.spacingSpace16) {
                     ForEach(offerPlaces) { HubOfferTile(place: $0, openStore: openStore) }
                 }
@@ -909,7 +1090,7 @@ private struct HubTopFinds: View {
     }
 
     private var buzzing: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+        VStack(alignment: .leading, spacing: R.spacingSpace16) {
             sectionTitle("What’s buzzing here?")
             rail(spacing: R.spacingSpace12) {
                 ForEach(hub.buzz) { HubBuzzTile(item: $0) }
@@ -926,50 +1107,41 @@ private struct HubTopFinds: View {
             .accessibilityAddTraits(.isHeader)
     }
 
-    private func section<Content: View>(_ title: String, chips: [String], selection: Binding<String>, chipHeight: CGFloat = 40,
+    /// Heading, chips, content: 16pt apart visually, since each chip carries 6pt of tap padding.
+    private func section<Content: View>(_ title: String, chips: [String], selection: Binding<String>,
                                         @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace16) {
+        VStack(alignment: .leading, spacing: 10) {
             sectionTitle(title)
-            HubSectionChips(titles: chips, selection: selection, height: chipHeight)
+            HubSectionChips(titles: chips, selection: selection)
             content()
         }
     }
 
+    /// A plain row, not a lazy one: the rail's height has to come from every tile, or the taller ones get cut off at the bottom.
     private func rail<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
         ScrollView(.horizontal) {
-            LazyHStack(alignment: .top, spacing: spacing) { content() }
+            HStack(alignment: .top, spacing: spacing) { content() }
                 .scrollTargetLayout()
         }
         .carousel()
     }
 }
 
-/// A section's chips: an outline that brightens on the selected one.
+/// A section's chips, in the same style and size as the filter chips.
 private struct HubSectionChips: View {
     let titles: [String]
     @Binding var selection: String
-    var height: CGFloat = 40
 
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: R.spacingSpace8) {
                 ForEach(titles, id: \.self) { title in
                     let selected = title == selection
-                    Button {
+                    Button(title) {
                         withAnimation(.snappy(duration: 0.22)) { selection = title }
-                    } label: {
-                        Text(title)
-                            .backstageText(.label2)
-                            .foregroundStyle(selected ? M.textPrimary : M.textSecondary)
-                            .padding(.horizontal, R.spacingSpace12)
-                            .frame(height: height)
-                            .background(selected ? Color.black.opacity(0.16) : .clear, in: Capsule())
-                            .overlay(Capsule().strokeBorder(selected ? M.buttonPrimaryBackgroundPressed : M.borderModerate, lineWidth: R.stroke1Px))
-                            .frame(minHeight: 44)
-                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+                    .buttonStyle(BackstageFilterButtonStyle(isActive: selected, compact: true))
+                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
         }
@@ -991,7 +1163,7 @@ private struct HubBuzzTile: View {
                 .overlay(RoundedRectangle(cornerRadius: 10.7).strokeBorder(M.borderModerate, lineWidth: 0.9))
             VStack(alignment: .leading, spacing: R.spacingSpace4) {
                 Text(item.title)
-                    .backstageText(.hubLabel1)
+                    .backstageText(.title4)
                     .foregroundStyle(M.textPrimary)
                     .lineLimit(1)
                 if let subtitle = item.subtitle {
@@ -1056,7 +1228,7 @@ private struct HubOfferTile: View {
                         .lineLimit(1)
                     if !place.cuisine.isEmpty {
                         Text(place.cuisine)
-                            .backstageText(.finePrint2)
+                            .backstageText(.label3)
                             .foregroundStyle(M.textTertiary)
                             .lineLimit(1)
                     }
@@ -1079,7 +1251,7 @@ private struct HubShopTile: View {
                 HubLogoTile(logo: place.logo, width: 62, height: 63)
                 VStack(alignment: .leading, spacing: R.spacingSpace4) {
                     Text(place.name)
-                        .backstageText(.title3)
+                        .backstageText(.title4)
                         .foregroundStyle(M.textPrimary)
                         .lineLimit(1)
                     Text(place.floorLabel)
@@ -1118,11 +1290,11 @@ private struct HubFunTile: View {
                 .padding(.bottom, 11)
             VStack(alignment: .leading, spacing: R.spacingSpace4) {
                 Text(place.name)
-                    .backstageText(.title3)
+                    .backstageText(.title4)
                     .foregroundStyle(M.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("\(place.floorLabel) • \(place.cuisine)")
-                    .backstageText(.hubBody2)
+                    .backstageText(.label3)
                     .foregroundStyle(M.textTertiary)
                     .lineLimit(1)
                 if let offer = place.offer { HubOfferLine(offer: offer) }
@@ -1162,7 +1334,7 @@ private struct HubSalonTile: View {
                     .foregroundStyle(M.textPrimary)
                     .lineLimit(1)
                 Text(place.shopNumber ?? place.floorLabel)
-                    .backstageText(.finePrint2)
+                    .backstageText(.label3)
                     .foregroundStyle(M.textTertiary)
                     .lineLimit(1)
             }
@@ -1204,7 +1376,9 @@ struct HubRatingBadge: View {
                 .font(.custom("BeVietnamPro-Bold", size: 10, relativeTo: .caption2))
                 .foregroundStyle(M.hubTextSuccess)
             Image("hub_ic_star_badge")
+                .renderingMode(.template)
                 .resizable()
+                .foregroundStyle(M.iconAccentGreen)
                 .frame(width: 8, height: 8)
         }
         .padding(.horizontal, 3)
@@ -1222,7 +1396,9 @@ struct HubNewBadge: View {
                 .font(.custom("BeVietnamPro-Bold", size: 11, relativeTo: .caption2))
                 .foregroundStyle(M.hubTextNew)
             Image("hub_ic_star_new")
+                .renderingMode(.template)
                 .resizable()
+                .foregroundStyle(M.hubTextNew)
                 .frame(width: 10, height: 10)
         }
         .padding(.horizontal, R.spacingSpace4)
@@ -1238,7 +1414,9 @@ struct HubOfferLine: View {
     var body: some View {
         HStack(spacing: compact ? R.spacingSpace4 : 5) {
             Image("hub_ic_offer")
+                .renderingMode(.template)
                 .resizable()
+                .foregroundStyle(M.textOffer)
                 .frame(width: compact ? 12 : 16, height: compact ? 12 : 16)
             Text(offer)
                 .backstageText(compact ? .finePrint2 : .body3)
@@ -1340,17 +1518,17 @@ private struct HubPlaceList: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+        VStack(alignment: .leading, spacing: 10) {
             if let title {
                 Text(title)
                     .backstageText(.hubTitle2)
                     .foregroundStyle(M.textPrimary)
                     .padding(.horizontal, R.spacingSpace16)
-                    .padding(.top, R.spacingSpace16)
+                    .padding(.top, R.spacingSpace24)
                     .accessibilityAddTraits(.isHeader)
                 HubPlaceFilterRail(active: $active)
             }
-            LazyVStack(spacing: R.spacingSpace20) {
+            VStack(spacing: R.spacingSpace20) {
                 if filtered.isEmpty {
                     Text("Nothing here matches those filters")
                         .backstageText(.body3)
@@ -1414,12 +1592,14 @@ struct HubPlaceRow: View {
                             .foregroundStyle(M.iconPrimary)
                     } else {
                         Image("hub_ic_bookmark")
+                            .renderingMode(.template)
                             .resizable()
+                            .foregroundStyle(M.iconPrimary)
                             .frame(width: 24, height: 24)
                     }
                 }
                 .frame(width: 32, height: 32)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner8))
+                .background(M.surfaceTransparent, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner8))
                 .frame(width: 44, height: 44, alignment: .topTrailing)
                 .contentShape(Rectangle())
             }
@@ -1479,6 +1659,100 @@ private struct HubAirportList: View {
     }
 }
 
+// MARK: - Glow colour
+
+/// The detail page's background glow, read from the hub's photo (Figma "Notes - Hub glow rule"), in HSL:
+/// hue from the photo's prominent colour; saturation ×1.4, held to 45–90%; lightness 55%, or 62% for blues (215–260°),
+/// which read darker at the same lightness. A photo with almost no colour (S < 12%) keeps its own saturation at 65% lightness.
+/// The page sets the opacity (25% dark, 30% light) and the blur. Cached per image.
+enum HubGlow {
+    private static var cache: [String: Color] = [:]
+    /// Used when the image can't be read.
+    private static let fallback = Color(hex: 0x748599)
+
+    static func color(for image: String) -> Color {
+        if let hit = cache[image] { return hit }
+        let made = prominent(in: image).map { glow(hue: $0.h, saturation: $0.s) } ?? fallback
+        cache[image] = made
+        return made
+    }
+
+    /// The rule, applied to the prominent colour's hue (0–1) and HSL saturation (0–1).
+    static func glow(hue: Double, saturation: Double) -> Color {
+        if saturation < 0.12 { return rgb(hue, saturation, 0.65) }
+        let degrees = hue * 360
+        return rgb(hue, min(max(saturation * 1.4, 0.45), 0.9), (215...260).contains(degrees) ? 0.62 : 0.55)
+    }
+
+    /// The prominent colour: of the photo's coloured pixels (S ≥ 12%, skipping near-black and near-white), the hue band that
+    /// covers the most of it, with its two neighbours so a colour split across a band edge still counts as one, averaged.
+    /// When under a tenth of the photo has colour, it's a grey photo, and the average of the whole photo is used instead.
+    private static func prominent(in name: String) -> (h: Double, s: Double)? {
+        guard let image = UIImage(named: name)?.cgImage else { return nil }
+        let side = 40
+        var px = [UInt8](repeating: 0, count: side * side * 4)
+        guard let ctx = CGContext(data: &px, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.interpolationQuality = .medium
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        let bins = 24
+        var counts = [Double](repeating: 0, count: bins)
+        var sums = [(r: Double, g: Double, b: Double)](repeating: (0, 0, 0), count: bins)
+        var all = (r: 0.0, g: 0.0, b: 0.0), seen = 0.0, coloured = 0.0
+        for i in stride(from: 0, to: px.count, by: 4) {
+            let r = Double(px[i]) / 255, g = Double(px[i + 1]) / 255, b = Double(px[i + 2]) / 255
+            let (h, s, l) = hsl(r, g, b)
+            guard l > 0.08, l < 0.95 else { continue }
+            all.r += r; all.g += g; all.b += b; seen += 1
+            guard s >= 0.12 else { continue }
+            let k = min(Int(h * Double(bins)), bins - 1)
+            counts[k] += 1; coloured += 1
+            sums[k].r += r; sums[k].g += g; sums[k].b += b
+        }
+        guard seen > 0 else { return nil }
+        if coloured < seen * 0.1 {
+            let (h, s, _) = hsl(all.r / seen, all.g / seen, all.b / seen)
+            return (h, s)
+        }
+        let window = { (k: Int) in [(k + bins - 1) % bins, k, (k + 1) % bins] }
+        let top = (0..<bins).max { window($0).reduce(0) { $0 + counts[$1] } < window($1).reduce(0) { $0 + counts[$1] } }!
+        var c = (r: 0.0, g: 0.0, b: 0.0), n = 0.0
+        for k in window(top) { c.r += sums[k].r; c.g += sums[k].g; c.b += sums[k].b; n += counts[k] }
+        let (h, s, _) = hsl(c.r / n, c.g / n, c.b / n)
+        return (h, s)
+    }
+
+    private static func hsl(_ r: Double, _ g: Double, _ b: Double) -> (h: Double, s: Double, l: Double) {
+        let hi = max(r, g, b), lo = min(r, g, b), d = hi - lo, l = (hi + lo) / 2
+        guard d > 0 else { return (0, 0, l) }
+        let s = d / (1 - abs(2 * l - 1))
+        var h: Double
+        switch hi {
+        case r: h = ((g - b) / d).truncatingRemainder(dividingBy: 6)
+        case g: h = (b - r) / d + 2
+        default: h = (r - g) / d + 4
+        }
+        h /= 6
+        if h < 0 { h += 1 }
+        return (h, s, l)
+    }
+
+    private static func rgb(_ h: Double, _ s: Double, _ l: Double) -> Color {
+        let c = (1 - abs(2 * l - 1)) * s, x = c * (1 - abs((h * 6).truncatingRemainder(dividingBy: 2) - 1)), m = l - c / 2
+        let (r, g, b): (Double, Double, Double) = switch Int(h * 6) % 6 {
+        case 0: (c, x, 0)
+        case 1: (x, c, 0)
+        case 2: (0, c, x)
+        case 3: (0, x, c)
+        case 4: (x, 0, c)
+        default: (c, 0, x)
+        }
+        return Color(red: r + m, green: g + m, blue: b + m)
+    }
+}
+
 #Preview {
-    HubDetailView(hub: HubsData.hubs[12])
+    HubDetailView(hub: HubsData.hubs[0])
 }

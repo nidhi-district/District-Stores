@@ -112,3 +112,5 @@ hub_hotel_leela	https://images.unsplash.com/photo-1551882547-ff40c63fe5fa
 hub_hotel_taj	https://images.unsplash.com/photo-1542314831-068cd1dbfeeb
 hub_beach_baga	https://images.unsplash.com/photo-1519046904884-53103b34b206
 hub_beach_juhu	https://images.unsplash.com/photo-1507525428034-b723cf961d3e
+hub_buzz_blooms	https://images.unsplash.com/photo-1585320806297-9794b3e4eeae
+hub_buzz_lawns	https://images.unsplash.com/photo-1558904541-efa843a96f01

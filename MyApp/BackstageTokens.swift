@@ -92,6 +92,10 @@ enum BackstageTokens {
 
         // Brand washes (Figma colors/*/900)
         static let brandGreen900 = Color(dark: Color(rgba: 0x042F12FF), light: Color(rgba: 0x042F12FF))
+        static let brandPurple = Core.colorPurePurple  // Figma color/pure/purple, the brand purple
+        /// The indigo at the top of the production District app's screens, sampled from it. The brand purple can't produce this
+        /// colour at any opacity: it comes out lighter and pinker. Pending a DS token.
+        static let districtWash = Color(dark: Color(rgba: 0x4A30F0FF), light: Color(rgba: 0x4A30F0FF))
         static let brandPurple900 = Color(dark: Color(rgba: 0x160D3BFF), light: Color(rgba: 0x160D3BFF))
         static let textBlack = Color(dark: Core.colorGrey900, light: Core.colorGrey900)
 
@@ -100,9 +104,10 @@ enum BackstageTokens {
         static let hubTextSuccess = Color(dark: Color(rgba: 0x58E487FF), light: Color(rgba: 0x1E9E4AFF))  // Figma color/text/success
         static let hubTextClosed = Color(dark: Color(rgba: 0xF09275FF), light: Color(rgba: 0xC9502CFF))
         static let hubTextNew = Color(dark: Color(rgba: 0x987EFFFF), light: Color(rgba: 0x5631EDFF))
+        static let hubBadgeNew = Color(dark: Core.colorPurple500, light: Core.colorPurple500)  // Dark enough for white text
         static let hubSurfaceNew = Color(dark: Color(rgba: 0x886AFF1A), light: Color(rgba: 0x886AFF1A))
         static let hubSurfaceRating = Color(dark: Color(rgba: 0x15F5201A), light: Color(rgba: 0x15F5201A))
-        static let hubSurfaceChip = Color(dark: Color(rgba: 0xFFFFFF29), light: Color(rgba: 0xFFFFFF29))  // Figma white + alpha 16%
+        static let hubSurfaceChip = Color(dark: Color(rgba: 0xFFFFFF1A), light: Core.colorTransparaentWhiteWhite72Pct)  // Dark: white + alpha 10% (Figma has 16%; lowered at the user's request). Light: white 72%, the Figma light listing's white tags
         static let hubPureWhite = Core.colorPureWhite
 
         // icon/*

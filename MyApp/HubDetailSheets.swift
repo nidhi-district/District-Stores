@@ -105,8 +105,8 @@ struct HubInfoSheetView: View {
                     .foregroundStyle(M.buttonPrimaryLabel)
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
-                    .background(M.textPrimary, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
-                    .contentShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                    .background(M.textPrimary, in: Capsule())
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(PressableStyle())
                 .padding(.horizontal, R.spacingSpace16)
@@ -382,7 +382,9 @@ struct HubCategorySection: View {
                     }
                     Spacer(minLength: 0)
                     Image(chevronSize > 24 ? "hub_ic_chev32" : "hub_ic_chev24")
+                        .renderingMode(.template)
                         .resizable()
+                        .foregroundStyle(M.iconPrimary)
                         .frame(width: chevronSize, height: chevronSize)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
@@ -491,67 +493,29 @@ struct HubCompactRow: View {
 
 // MARK: - Search in hub
 
-/// Search inside a hub. The Figma stops at the action bar's Search button, so this is a simple filter over the hub's places.
+/// Search inside a hub, as a half-height glass sheet: what's trending here until you type, then matches from the whole hub.
+/// Focusing the field opens it to full height, so results aren't squeezed by the keyboard.
 struct HubSearchView: View {
     let hub: Hub
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var saved: Set<String> = []
     @State private var storePage: StoreDetail?
+    @State private var detent: PresentationDetent = .medium
     @FocusState private var focused: Bool
 
     private var results: [HubPlace] {
-        guard !query.isEmpty else { return HubsData.places }
-        return HubsData.places.filter {
+        HubsData.places.filter {
             $0.name.localizedCaseInsensitiveContains(query) || $0.cuisine.localizedCaseInsensitiveContains(query)
         }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: R.spacingSpace8) {
-                HStack(spacing: R.spacingSpace8) {
-                    Image("hub_ic_search")
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                        .accessibilityHidden(true)
-                    TextField("Search in \(hub.name)", text: $query)
-                        .backstageText(.hubLabel1)
-                        .foregroundStyle(M.textPrimary)
-                        .focused($focused)
-                        .submitLabel(.search)
-                }
-                .padding(.horizontal, R.spacingSpace12)
-                .frame(height: 44)
-                .background(M.surfacePrimary, in: Capsule())
-                .overlay(Capsule().strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
-
-                Button { dismiss() } label: {
-                    Image("hub_ic_close")
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
-            }
-            .padding(.horizontal, R.spacingSpace16)
-            .padding(.vertical, R.spacingSpace12)
-
+            field
             ScrollView(.vertical) {
-                LazyVStack(spacing: R.spacingSpace20) {
-                    if results.isEmpty {
-                        Text("No places match “\(query)”")
-                            .backstageText(.body3)
-                            .foregroundStyle(M.textSecondary)
-                            .padding(.vertical, R.spacingSpace40)
-                    }
-                    ForEach(results) { place in
-                        HubPlaceRow(place: place, isSaved: saved.contains(place.id), openStore: { storePage = $0 }) {
-                            if saved.contains(place.id) { saved.remove(place.id) } else { saved.insert(place.id) }
-                        }
-                    }
+                Group {
+                    if query.isEmpty { trending } else { matches }
                 }
                 .padding(.horizontal, R.spacingSpace16)
                 .padding(.top, R.spacingSpace8)
@@ -560,8 +524,499 @@ struct HubSearchView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.immediately)
         }
-        .background(M.backgroundPrimary.ignoresSafeArea())
+        .padding(.top, R.spacingSpace12)
+        .presentationDetents([.medium, .large], selection: $detent)
+        .presentationDragIndicator(.visible)
+        .modifier(HubGlassSheetBackground())
         .preferredColorScheme(.dark)
+        .onChange(of: focused) { if focused { detent = .large } }
         .readerCover(item: $storePage) { StoreDetailView(detail: $0) }
+    }
+
+    private var field: some View {
+        HStack(spacing: R.spacingSpace8) {
+            HStack(spacing: R.spacingSpace8) {
+                Image("hub_ic_search")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .accessibilityHidden(true)
+                TextField("Search in \(hub.name)", text: $query)
+                    .backstageText(.hubLabel1)
+                    .foregroundStyle(M.textPrimary)
+                    .focused($focused)
+                    .submitLabel(.search)
+            }
+            .padding(.horizontal, R.spacingSpace12)
+            .frame(height: 44)
+            .background(Color.white.opacity(0.08), in: Capsule())
+            .overlay(Capsule().strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+
+            Button { dismiss() } label: {
+                Image("hub_ic_close")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close")
+        }
+        .padding(.leading, R.spacingSpace16)
+        .padding(.trailing, R.spacingSpace8)
+        .padding(.bottom, R.spacingSpace8)
+    }
+
+    private var trending: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace16) {
+            Text("Trending in \(hub.name)")
+                .backstageText(.hubTitle2)
+                .foregroundStyle(M.textPrimary)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(HubsData.trending) { place in
+                HubOpensStore(place: place, openStore: { storePage = $0 }) {
+                    HubCompactRow(place: place, line: place.floorLabel)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var matches: some View {
+        VStack(spacing: R.spacingSpace20) {
+            if results.isEmpty {
+                Text("No places match “\(query)”")
+                    .backstageText(.body3)
+                    .foregroundStyle(M.textSecondary)
+                    .padding(.vertical, R.spacingSpace40)
+            }
+            ForEach(results) { place in
+                HubPlaceRow(place: place, isSaved: saved.contains(place.id), openStore: { storePage = $0 }) {
+                    if saved.contains(place.id) { saved.remove(place.id) } else { saved.insert(place.id) }
+                }
+            }
+        }
+    }
+}
+
+/// iOS 26's partial-height sheets are Liquid Glass by default, so only older systems need a material.
+private struct HubGlassSheetBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+        } else {
+            content.presentationBackground(.ultraThinMaterial)
+        }
+    }
+}
+
+// MARK: - Worth stepping out for
+
+/// The details sheet behind a "Worth stepping out for" card. It works for any kind of pick: a celebrity promoting a film, a
+/// live gig, a market, an offer, a place to eat or something to do. It shows when, where and what entry costs, who's
+/// appearing, what it's about, and the hub it's at. "Explore" opens that hub.
+struct HubPickSheet: View {
+    let pick: HubsData.Pick
+    let onExplore: (Hub) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var reminded = false
+    @State private var detent: PresentationDetent = .fraction(0.86)
+
+    private var hub: Hub? { HubsData.hub(named: pick.hub) }
+
+    /// One-off things get a reminder; ongoing ones (a café, a rink) get saved instead.
+    private var isDated: Bool {
+        switch pick.kind {
+        case .moviePromo, .liveEvent, .market: true
+        case .offer, .dining, .activity: false
+        }
+    }
+
+    private static let heroHeight: CGFloat = 300
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            scroll
+                #if DEBUG
+                // `-hubsPickScroll` opens the sheet scrolled to the end.
+                .task {
+                    guard ProcessInfo.processInfo.arguments.contains("-hubsPickScroll") else { return }
+                    try? await Task.sleep(for: .milliseconds(600))
+                    proxy.scrollTo("pickEnd", anchor: .bottom)
+                }
+                #endif
+        }
+        .presentationDetents([.fraction(0.86), .large], selection: $detent)
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(R.cornerRadiusCorner24)
+        .presentationBackground(M.backgroundPrimary)
+        .sensoryFeedback(.success, trigger: reminded) { _, new in new }
+    }
+
+    private var scroll: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 0) {
+                hero
+                VStack(alignment: .leading, spacing: R.spacingSpace32) {
+                    titleBlock
+                    facts
+                    if !pick.featuring.isEmpty { people }
+                    about
+                    if !pick.highlights.isEmpty { highlights }
+                    if let hub { happeningAt(hub) }
+                }
+                .padding(.horizontal, R.spacingSpace16)
+                // The title rises into the photo's fade.
+                .padding(.top, -R.spacingSpace40)
+                .padding(.bottom, R.spacingSpace24)
+                Color.clear.frame(height: 0).id("pickEnd")
+            }
+        }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+        .overlay(alignment: .topTrailing) { closeButton }
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer }
+        .background(M.backgroundPrimary)
+    }
+
+    // MARK: Hero
+
+    private var hero: some View {
+        Color.clear
+            .frame(height: Self.heroHeight)
+            .overlay { Image(pick.image).resizable().scaledToFill() }
+            .overlay {
+                // The bottom of the photo softens into a blur as it fades, so it dissolves into the sheet instead of
+                // showing a hard tonal band.
+                Image(pick.image).resizable().scaledToFill()
+                    .blur(radius: 20)
+                    .mask {
+                        LinearGradient(stops: [.init(color: .clear, location: 0.45), .init(color: .black, location: 0.8)],
+                                       startPoint: .top, endPoint: .bottom)
+                    }
+            }
+            .clipped()
+            .overlay {
+                // An eased (smoothstep) ramp to the sheet colour: it starts gently, so there's no visible line where it
+                // begins, and lands softly on solid.
+                LinearGradient(stops: Self.fadeStops, startPoint: .top, endPoint: .bottom)
+                    // Runs a little past the photo, so its antialiased bottom row can't show as a line.
+                    .padding(.bottom, -2)
+            }
+            .overlay(alignment: .topLeading) { kindBadge.padding(R.spacingSpace16).padding(.top, R.spacingSpace8) }
+            .accessibilityHidden(true)
+    }
+
+    private static let fadeStops: [Gradient.Stop] = {
+        let start = 0.3, end = 0.97, steps = 12
+        return (0...steps).map { i in
+            let t = Double(i) / Double(steps)
+            let eased = t * t * (3 - 2 * t)
+            return .init(color: M.backgroundPrimary.opacity(eased), location: start + (end - start) * t)
+        }
+    }()
+
+    private var kindBadge: some View {
+        HStack(spacing: R.spacingSpace4) {
+            LucideIcon(name: pick.kind.icon, size: 12)
+            Text(pick.kind.label)
+                .backstageText(.label3)
+        }
+        .foregroundStyle(M.hubPureWhite)
+        .padding(.horizontal, R.spacingSpace8)
+        .padding(.vertical, 6)
+        .background(Color.black.opacity(0.32), in: Capsule())
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(LinearGradient(colors: [M.hubTextNew.opacity(0.85), M.hubTextNew.opacity(0.3)],
+                                                       startPoint: .top, endPoint: .bottom),
+                                        lineWidth: R.stroke1Px))
+        .environment(\.colorScheme, .dark)
+    }
+
+    private var closeButton: some View {
+        Button { dismiss() } label: {
+            LucideIcon(name: "lc_x", size: 16)
+                .foregroundStyle(M.hubPureWhite)
+                .frame(width: 32, height: 32)
+                .background(Color.black.opacity(0.32), in: Circle())
+                .background(.ultraThinMaterial, in: Circle())
+                .environment(\.colorScheme, .dark)
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, R.spacingSpace16)
+        .padding(.trailing, R.spacingSpace8)
+        .accessibilityLabel("Close")
+    }
+
+    // MARK: Copy
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace8) {
+            Text(pick.title)
+                .backstageText(.hubTitle1)
+                .foregroundStyle(M.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            HStack(spacing: 6) {
+                LucideIcon(name: "lc_map_pin", size: 13)
+                    .foregroundStyle(M.iconSecondary)
+                    .accessibilityHidden(true)
+                Text(hub.map { "\($0.name) · \($0.locality)" } ?? pick.hub)
+                    .backstageText(.label2)
+                    .foregroundStyle(M.textSecondary)
+                    .lineLimit(1)
+            }
+            Text(pick.line)
+                .font(.custom("BeVietnamPro-Italic", size: 13, relativeTo: .subheadline))
+                .foregroundStyle(M.textPrimary.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, R.spacingSpace4)
+        }
+    }
+
+    /// When, where and entry, as one card.
+    private var facts: some View {
+        VStack(spacing: 0) {
+            factRow(icon: "lc_calendar", label: "When", value: pick.when, detail: pick.time)
+            divider
+            factRow(icon: "lc_map_pin", label: "Where", value: pick.spot, detail: hub?.name)
+            divider
+            factRow(icon: "lc_ticket", label: "Entry", value: pick.entry, detail: nil)
+        }
+        .padding(.horizontal, R.spacingSpace16)
+        .background(M.surfaceTransparent, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
+        .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner16).strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+    }
+
+    private var divider: some View {
+        Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px).padding(.leading, 48)
+    }
+
+    /// `label` isn't shown (the icon says it); VoiceOver reads it before the value.
+    private func factRow(icon: String, label: String, value: String, detail: String?) -> some View {
+        HStack(spacing: R.spacingSpace12) {
+            // White on the dark sheet (icon/primary flips to near-black on the light one, where white wouldn't show).
+            LucideIcon(name: icon, size: 18)
+                .foregroundStyle(M.iconPrimary)
+                .frame(width: 36, height: 36)
+                .background(M.surfaceTransparent, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner8))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .backstageText(.title4)
+                    .foregroundStyle(M.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail {
+                    Text(detail)
+                        .backstageText(.body3)
+                        .foregroundStyle(M.textSecondary)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, R.spacingSpace12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)" + (detail.map { ", \($0)" } ?? ""))
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .backstageText(.title3)
+            .foregroundStyle(M.textPrimary)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var people: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace16) {
+            sectionTitle(pick.kind.peopleTitle)
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: R.spacingSpace16) {
+                    ForEach(Array(pick.featuring.enumerated()), id: \.element.id) { index, person in
+                        HubPickPersonView(person: person, tint: Self.tints[index % Self.tints.count])
+                    }
+                }
+            }
+            .contentMargins(.horizontal, R.spacingSpace16, for: .scrollContent)
+            .padding(.horizontal, -R.spacingSpace16)
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    private static let tints: [Color] = [Color(hex: 0x8E6CFF), Color(hex: 0xE0607E), Color(hex: 0x3FA7D6), Color(hex: 0xE59A3C)]
+
+    private var about: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+            sectionTitle("About")
+            Text(pick.about)
+                .backstageText(.hubBody2)
+                .foregroundStyle(M.textPrimary.opacity(0.76))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var highlights: some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+            sectionTitle("Highlights")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: R.spacingSpace8), GridItem(.flexible(), spacing: R.spacingSpace8)],
+                      spacing: R.spacingSpace8) {
+                ForEach(pick.highlights, id: \.self) { item in
+                    Text(item)
+                        .backstageText(.label2)
+                        .foregroundStyle(M.textPrimary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .padding(.horizontal, R.spacingSpace12)
+                        .background(M.surfaceTransparent, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                        .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12).strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+                }
+            }
+        }
+    }
+
+    /// The hub the pick is at, tappable like the CTA.
+    private func happeningAt(_ hub: Hub) -> some View {
+        VStack(alignment: .leading, spacing: R.spacingSpace12) {
+            sectionTitle("Happening at")
+            Button { onExplore(hub) } label: {
+                HStack(spacing: R.spacingSpace12) {
+                    Color.clear
+                        .frame(width: 64, height: 64)
+                        .overlay(alignment: hub.imageAlignment) { Image(hub.image).resizable().scaledToFill() }
+                        .clipShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner12))
+                    VStack(alignment: .leading, spacing: R.spacingSpace4) {
+                        Text(hub.name)
+                            .backstageText(.title4)
+                            .foregroundStyle(M.textPrimary)
+                            .lineLimit(1)
+                        HStack(spacing: R.spacingSpace4) {
+                            LucideIcon(name: "lc_star", size: 10)
+                                .foregroundStyle(M.textPrimary)
+                            Text(hub.googleRating)
+                            Circle().fill(M.textTertiary).frame(width: 3, height: 3)
+                            Text("\(hub.distance) away")
+                        }
+                        .backstageText(.label3)
+                        .foregroundStyle(M.textSecondary)
+                        Text(hub.type.title.hasSuffix("s") ? String(hub.type.title.dropLast()) : hub.type.title)
+                            .backstageText(.label3)
+                            .foregroundStyle(M.textTertiary)
+                    }
+                    Spacer(minLength: 0)
+                    LucideIcon(name: "lc_chevron_right", size: 18)
+                        .foregroundStyle(M.iconSecondary)
+                }
+                .padding(R.spacingSpace12)
+                .background(M.surfaceTransparent, in: RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
+                .overlay(RoundedRectangle(cornerRadius: R.cornerRadiusCorner16).strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+                .contentShape(RoundedRectangle(cornerRadius: R.cornerRadiusCorner16))
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityElement(children: .combine)
+            .accessibilityHint("Opens the hub")
+        }
+    }
+
+    // MARK: Footer
+
+    private var footer: some View {
+        HStack(spacing: R.spacingSpace12) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) { reminded.toggle() }
+            } label: {
+                // Lucide is outline-only, so the "on" state swaps to its ringing bell / checked bookmark in the accent.
+                LucideIcon(name: isDated ? (reminded ? "lc_bell_ring" : "lc_bell") : (reminded ? "lc_bookmark_check" : "lc_bookmark"),
+                           size: 20)
+                    .foregroundStyle(reminded ? M.textOffer : M.iconPrimary)
+                    .id(reminded)
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    .frame(width: 48, height: 48)
+                    .background(M.surfaceTransparent, in: Circle())
+                    .overlay(Circle().strokeBorder(M.borderSubtle, lineWidth: R.stroke1Px))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isDated ? "Remind me" : "Save")
+            .accessibilityAddTraits(reminded ? .isSelected : [])
+
+            Button {
+                if let hub { onExplore(hub) }
+            } label: {
+                HStack(spacing: R.spacingSpace8) {
+                    Text("Explore \(pick.hub)")
+                        .backstageText(.label1)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    LucideIcon(name: "lc_arrow_up_right", size: 16)
+                }
+                .foregroundStyle(M.buttonPrimaryLabel)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(M.textPrimary, in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(PressableStyle())
+            .disabled(hub == nil)
+        }
+        .padding(.horizontal, R.spacingSpace16)
+        .padding(.top, R.spacingSpace12)
+        .padding(.bottom, R.spacingSpace8)
+        .background {
+            M.backgroundPrimary
+                .overlay(alignment: .top) { Rectangle().fill(M.borderSubtle).frame(height: R.stroke1Px) }
+                .ignoresSafeArea(edges: .bottom)
+        }
+    }
+}
+
+/// A Lucide icon from the asset catalog's Lucide folder, tinted by the foreground style.
+struct LucideIcon: View {
+    let name: String
+    var size: CGFloat = 16
+
+    var body: some View {
+        Image(name)
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
+/// A person appearing at a pick. There are no photos, so a tinted disc carries their initials.
+private struct HubPickPersonView: View {
+    let person: HubsData.Pick.Person
+    let tint: Color
+
+    private var initials: String {
+        person.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined()
+    }
+
+    var body: some View {
+        VStack(spacing: R.spacingSpace8) {
+            Text(initials)
+                .font(.custom("BeVietnamPro-SemiBold", size: 20, relativeTo: .title3))
+                .foregroundStyle(M.hubPureWhite)
+                .frame(width: 68, height: 68)
+                .background(LinearGradient(colors: [tint, tint.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: Circle())
+                .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: R.stroke1Px))
+                .accessibilityHidden(true)
+            VStack(spacing: 2) {
+                Text(person.name)
+                    .backstageText(.label2)
+                    .foregroundStyle(M.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                Text(person.role)
+                    .backstageText(.label3)
+                    .foregroundStyle(M.textTertiary)
+                    .lineLimit(1)
+            }
+        }
+        .frame(width: 88)
+        .accessibilityElement(children: .combine)
     }
 }

@@ -1,5 +1,7 @@
 import SwiftUI
 import CoreText
+import Observation
+import UIKit
 
 private typealias M = BackstageTokens.Mapped
 private typealias R = BackstageTokens.Responsive
@@ -63,7 +65,6 @@ enum BackstageTextStyle {
     case hubTitle2     // Hub mode Title/Title 2
     case hubBody2      // Hub mode Body/Body 2
     case hubLabel1     // Hub mode Label/Label 1
-    case hubNavLabel   // Hub mode bottom nav label
 
     // Title 3, Title 4, Label 2, Label 3, Body 3 and Button 3 follow the Figma "Homepage and
     // Search" file's text variables; the rest keep the Backstage reference values.
@@ -75,7 +76,7 @@ enum BackstageTextStyle {
             return switch self {
             case .heading3, .title1, .title2, .hubTitle1, .hubTitle2: "PlayfairDisplayRoman-Bold"
             case .title3, .title4, .caption: "PlayfairDisplayRoman-SemiBold"
-            case .label1, .label2, .label3, .button3, .hubLabel1, .hubNavLabel: "SourceSerif4Roman-SemiBold"
+            case .label1, .label2, .label3, .button3, .hubLabel1: "SourceSerif4Roman-SemiBold"
             case .body1, .body2, .body3, .finePrint1, .hubBody2: "SourceSerif4Roman-Regular"
             case .specialTitle, .finePrint2: "Anton-Regular"
             }
@@ -83,7 +84,7 @@ enum BackstageTextStyle {
         return switch self {
         case .heading3, .title1: "BeVietnamPro-ExtraBold"
         case .title2, .specialTitle: "BeVietnamPro-Bold"
-        case .title3, .title4, .label1, .button3, .hubTitle1, .hubTitle2, .hubNavLabel: "BeVietnamPro-SemiBold"
+        case .title3, .title4, .label1, .button3, .hubTitle1, .hubTitle2: "BeVietnamPro-SemiBold"
         case .caption, .finePrint1, .finePrint2, .label2, .label3, .hubLabel1: "BeVietnamPro-Medium"
         case .body1, .body2, .body3, .hubBody2: "BeVietnamPro-Regular"
         }
@@ -99,7 +100,7 @@ enum BackstageTextStyle {
         case .title4, .hubBody2, .hubLabel1: 14
         case .finePrint1, .body3, .label2, .button3: 12
         case .label3: 11
-        case .specialTitle, .finePrint2, .hubNavLabel: 10
+        case .specialTitle, .finePrint2: 10
         }
     }
 
@@ -111,7 +112,7 @@ enum BackstageTextStyle {
         case .label1: 20
         case .title4, .finePrint1, .body3, .button3, .hubLabel1: 18
         case .label2, .specialTitle, .finePrint2: 16
-        case .label3, .hubNavLabel: 14
+        case .label3: 14
         }
     }
 
@@ -121,7 +122,6 @@ enum BackstageTextStyle {
         case .title2: -0.02
         case .title3, .hubTitle1, .hubTitle2: -0.01
         case .title4: -0.24 / 14
-        case .hubNavLabel: 0.04
         case .button3: -0.24 / 12
         case .specialTitle: 0.2
         default: 0
@@ -139,7 +139,7 @@ enum BackstageTextStyle {
         case .body2, .label1, .hubBody2, .hubLabel1: .callout
         case .body3, .label2: .subheadline
         case .label3, .finePrint1, .button3: .caption
-        case .specialTitle, .finePrint2, .hubNavLabel: .caption2
+        case .specialTitle, .finePrint2: .caption2
         }
     }
 }
@@ -163,7 +163,7 @@ private struct BackstageTextModifier: ViewModifier {
             .font(.custom(style.fontName(vogue: vogue), fixedSize: size))
             .tracking(size * style.tracking)
             .lineSpacing(max(0, (style.lineHeight - style.size * Self.naturalLineHeight) * scale))
-            .textCase(style == .specialTitle || style == .hubNavLabel ? .uppercase : nil)
+            .textCase(style == .specialTitle ? .uppercase : nil)
     }
 }
 
@@ -319,6 +319,44 @@ struct GlassGroup<Content: View>: View {
     }
 }
 
+// MARK: - Frosted bars
+
+/// A dark frosted bar: what's behind it blurred right out and deepened, so it reads as a solid surface with only a hint of the
+/// page through it, unlike clear Liquid Glass. A hairline edge, lighter along the top, and a soft shadow lift it off the page.
+/// Opaque under Reduce Transparency.
+private struct FrostedBarModifier<S: InsettableShape>: ViewModifier {
+    let shape: S
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                if reduceTransparency {
+                    shape.fill(M.surfacePrimary)
+                } else {
+                    ZStack {
+                        shape.fill(.ultraThinMaterial)
+                        shape.fill(Color(hex: 0x1C1C21).opacity(0.55))
+                    }
+                    .environment(\.colorScheme, .dark)
+                }
+            }
+            .overlay {
+                shape.strokeBorder(LinearGradient(colors: [Color.white.opacity(0.16), Color.white.opacity(0.05)],
+                                                  startPoint: .top, endPoint: .bottom),
+                                   lineWidth: 0.75)
+            }
+            .shadow(color: .black.opacity(0.28), radius: 12, y: 4)
+    }
+}
+
+extension View {
+    /// A dark frosted bar, for the tab bar and what floats with it. See FrostedBarModifier.
+    func frostedBar<S: InsettableShape>(in shape: S) -> some View {
+        modifier(FrostedBarModifier(shape: shape))
+    }
+}
+
 // MARK: - Buttons (bound to button/* component tokens)
 
 struct BackstagePrimaryButtonStyle: ButtonStyle {
@@ -365,19 +403,20 @@ struct BackstageTextButtonStyle: ButtonStyle {
 
 struct BackstageFilterButtonStyle: ButtonStyle {
     let isActive: Bool
-    /// The Hub mode chip: 32pt tall on the primary surface with a subtle border. Vertical padding keeps a 44pt target.
+    /// The Hub mode chip, used for every filter and section pill: 32pt tall, with a bright outline when selected. Vertical padding keeps a 44pt target.
     var compact = false
+    /// Glass instead of the solid surface, for chips floating over content.
+    var glass = false
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         if compact {
             configuration.label
                 .backstageText(.label2)
-                .foregroundStyle(isActive ? M.buttonFilterLabelActive : (pressed ? M.textSecondary : M.textPrimary))
+                .foregroundStyle(pressed ? M.textSecondary : M.textPrimary)
                 .padding(.horizontal, R.spacingSpace12)
                 .frame(height: 32)
-                .background(isActive ? M.buttonFilterBackgroundActive : M.surfacePrimary, in: Capsule())
-                .overlay(Capsule().strokeBorder(isActive ? M.buttonFilterBorderActive : M.borderSubtle, lineWidth: R.stroke1Px))
+                .chipSurface(glass: glass, isActive: isActive)
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
         } else {
@@ -403,6 +442,23 @@ struct BackstageFilterButtonStyle: ButtonStyle {
     }
 }
 
+extension View {
+    /// The ground of a 32pt chip: solid in the page, glass when floating over content.
+    @ViewBuilder
+    func chipSurface(glass: Bool, isActive: Bool = false) -> some View {
+        let outline = isActive ? M.buttonPrimaryBackgroundPressed : M.borderModerate
+        if glass {
+            liquidGlass(in: Capsule(), interactive: true, clear: true)
+                .overlay {
+                    if isActive { Capsule().strokeBorder(outline, lineWidth: R.stroke1Px) }
+                }
+        } else {
+            background(isActive ? Color.black.opacity(0.16) : M.surfacePrimary, in: Capsule())
+                .overlay(Capsule().strokeBorder(outline, lineWidth: R.stroke1Px))
+        }
+    }
+}
+
 /// Subtle press feedback for tappable content cards.
 struct PressableStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -420,5 +476,29 @@ extension View {
         contentMargins(.horizontal, R.spacingSpace16, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
+    }
+}
+
+// MARK: - System appearance
+
+/// The Light/Dark choice from iOS Settings or Control Centre. The app runs dark, and SwiftUI applies that to the window and
+/// its scene, so neither can tell; the screen's traits come from the system and still carry its choice. Only the hub pages
+/// follow it: the Hubs tab and the hub page.
+@MainActor @Observable
+final class SystemAppearance {
+    static let shared = SystemAppearance()
+
+    private(set) var scheme: ColorScheme = .dark
+
+    /// Reads the current choice. The app calls it on launch and each time it becomes active: changing the setting means going
+    /// to Settings (the app goes to the background) or opening Control Centre (it goes inactive), so it's read on the way back.
+    func start() {
+        guard let screen = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.screen }).first else { return }
+        update(screen.traitCollection)
+    }
+
+    private func update(_ traits: UITraitCollection) {
+        let next: ColorScheme = traits.userInterfaceStyle == .light ? .light : .dark
+        if next != scheme { scheme = next }
     }
 }

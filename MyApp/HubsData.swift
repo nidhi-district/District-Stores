@@ -44,15 +44,16 @@ enum HubType: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The tile art's size from the Figma category rail.
+    /// The tile art's size. The PNGs have different transparent margins, so these are set from each image's
+    /// visible bounds to keep it inside the tile and above the label.
     var artSize: CGFloat {
         switch self {
-        case .mall: 51
+        case .mall: 48
         case .highStreet: 49
-        case .market: 45
-        case .hotel: 59
-        case .beach: 47
-        case .airport, .business, .park: 40
+        case .market: 44
+        case .hotel: 56
+        case .beach: 44
+        case .airport, .business, .park: 36
         }
     }
 
@@ -77,7 +78,8 @@ enum HubType: String, CaseIterable, Identifiable {
         }
     }
 
-    /// "Find in hub" sits in the bar of hubs with a mapped indoor directory.
+    /// In-hub navigation: "Find in hub" in the hub page's bar and a tag on its listing card. On by default for the types that
+    /// usually have a mapped indoor directory; small malls opt out per hub, so the tag marks the big ones where it matters.
     fileprivate var hasFindInHub: Bool {
         switch self {
         case .mall, .business, .airport: true
@@ -118,6 +120,9 @@ enum HubTab: String, Identifiable {
         case .activities: "hub_tab_activities"
         }
     }
+
+    /// The tab icon as an outline with no dark fill, for use over photos and glass.
+    var lineIcon: String { icon + "_line" }
 
     var listTitle: String {
         switch self {
@@ -191,7 +196,7 @@ struct Hub: Identifiable, Equatable {
     let chips: [String]
     let image: String
     var imageAlignment: Alignment = .center
-    var googleRating: String? = nil
+    var googleRating: String
     var vibes: Set<String> = []
 
     // Detail page
@@ -214,11 +219,11 @@ struct Hub: Identifiable, Equatable {
 
     static func == (a: Hub, b: Hub) -> Bool { a.id == b.id }
 
-    init(_ name: String, type: HubType, locality: String, distance: String, blurb: String, chips: [String], image: String,
-         imageAlignment: Alignment = .center, googleRating: String? = nil, vibes: Set<String> = [],
-         heroImage: String? = nil, heroAlignment: Alignment = .center, detailDistance: String? = nil, detailArea: String? = nil,
-         rating: String? = "4.3", status: HubStatus? = .open(until: "Closes 1 AM"), stats: [HubStat],
-         glow: Color = Color(hex: 0x748599), address: String? = nil, brandLogo: String? = nil, buzz: [HubBuzz] = HubsData.defaultBuzz,
+    init(_ name: String, type: HubType, locality: String, distance: String, googleRating: String, blurb: String, chips: [String], image: String,
+         imageAlignment: Alignment = .center, vibes: Set<String> = [],
+         heroImage: String? = nil, heroAlignment: Alignment = .center,
+         status: HubStatus? = .open(until: "Closes 1 AM"), address: String, stats: [HubStat],
+         glow: Color = Color(hex: 0x748599), brandLogo: String? = nil, buzz: [HubBuzz] = HubsData.defaultBuzz,
          tabs: [HubTab]? = nil, hasFindInHub: Bool? = nil) {
         id = name
         self.name = name
@@ -233,13 +238,13 @@ struct Hub: Identifiable, Equatable {
         self.vibes = vibes
         self.heroImage = heroImage
         self.heroAlignment = heroAlignment
-        self.detailDistance = detailDistance ?? distance.replacingOccurrences(of: " ", with: "")
-        self.detailArea = detailArea ?? locality
-        self.rating = rating
+        detailDistance = distance.replacingOccurrences(of: " ", with: "")
+        detailArea = locality
+        rating = googleRating
         self.status = status
         self.stats = stats
         self.glow = glow
-        self.address = address ?? "\(name), \(locality), India"
+        self.address = address
         self.brandLogo = brandLogo
         self.buzz = buzz
         layout = type.layout
@@ -248,6 +253,13 @@ struct Hub: Identifiable, Equatable {
     }
 
     var hero: String { heroImage ?? image }
+
+    /// The city the header's location menu groups this hub under.
+    var region: String {
+        if locality.contains("Mumbai") { return "Mumbai" }
+        if locality.contains("Goa") { return "Goa" }
+        return "Delhi NCR"
+    }
 
     /// The distance pill's value as a number, for sorting.
     var distanceKm: Double {
@@ -313,24 +325,109 @@ struct HubCategory: Identifiable {
 
 enum HubsData {
     /// Listing title rail: "Worth stepping out for".
+    /// A card on the rail, plus everything its details sheet shows. Generic across what a hub can be worth stepping out for:
+    /// a celebrity promoting a film, a live gig, a market, an offer, a place to eat or something to do.
     struct Pick: Identifiable {
+        enum Kind {
+            case moviePromo, liveEvent, market, offer, dining, activity
+
+            /// The sheet's badge over the photo.
+            var label: String {
+                switch self {
+                case .moviePromo: "Movie promotion"
+                case .liveEvent: "Live event"
+                case .market: "Pop-up market"
+                case .offer: "Offer"
+                case .dining: "Dining"
+                case .activity: "Activity"
+                }
+            }
+
+            /// The badge's Lucide icon.
+            var icon: String {
+                switch self {
+                case .moviePromo: "lc_clapperboard"
+                case .liveEvent: "lc_mic_vocal"
+                case .market: "lc_shopping_basket"
+                case .offer: "lc_tag"
+                case .dining: "lc_utensils"
+                case .activity: "lc_sparkles"
+                }
+            }
+
+            /// Heading over the people on the sheet.
+            var peopleTitle: String {
+                switch self {
+                case .moviePromo: "Meet the stars"
+                case .liveEvent: "Line-up"
+                default: "Hosted by"
+                }
+            }
+        }
+
+        /// Someone appearing at the event: a star, a band, a chef. No photo, so the sheet draws their initials.
+        struct Person: Identifiable {
+            var id: String { name }
+            let name: String
+            let role: String
+        }
+
         var id: String { title }
         let title: String
         let hub: String
         let line: String
         let image: String
+        let kind: Kind
+        var featuring: [Person] = []
+        /// "Sat, 22 Nov" for a one-off, "Every day" for something ongoing.
+        let when: String
+        let time: String
+        /// Where inside the hub, e.g. "Fountain Courtyard, Ground floor".
+        let spot: String
+        let entry: String
+        let about: String
+        var highlights: [String] = []
     }
 
-    /// In the Figma's order, so the rail opens on the brunch card with the flea market peeking on the left.
+    /// In the Figma's order, so the rail opens on the brunch card with the flea market peeking on the left. The film promotion
+    /// and the gig sit between the Figma's cards. Their names (film, cast, band) are made up for the prototype.
     static let picks: [Pick] = [
         Pick(title: "Have brunch at 2D cafe", hub: "Ambience Mall",
-             line: "A vibrant spot where art meets flavor with unique 2D-themed decor and treats.", image: "hub_fly_brunch"),
+             line: "A vibrant spot where art meets flavor with unique 2D-themed decor and treats.", image: "hub_fly_brunch",
+             kind: .dining, when: "Every day", time: "9:00 AM – 1:00 PM", spot: "2D Cafe, Floor 2", entry: "₹1,200 for two",
+             about: "Step into a comic strip. Every wall, plate and cup at 2D Cafe is drawn in thick black outlines, so the whole room looks hand-sketched. Come for the fluffy soufflé pancakes and loaded brunch boards, stay for the photos.",
+             highlights: ["🥞 Soufflé pancakes", "🎨 Hand-drawn decor", "📸 Made for photos", "☕ Specialty coffee"]),
+        Pick(title: "Meet the cast of Monsoon Mixtape", hub: "DLF Promenade",
+             line: "Aanya Kapoor and Vir Malhotra drop by before Friday's release, with the trailer, a live Q&A and selfies.",
+             image: "plan_concert_hero", kind: .moviePromo,
+             featuring: [Pick.Person(name: "Aanya Kapoor", role: "Lead actor"), Pick.Person(name: "Vir Malhotra", role: "Lead actor"),
+                         Pick.Person(name: "Rohan Sethi", role: "Director")],
+             when: "Sat, 22 Nov", time: "5:00 PM – 7:00 PM", spot: "Fountain Courtyard, Ground floor", entry: "Free · first come, first served",
+             about: "The cast of Monsoon Mixtape, a coming-of-age musical set across one rainy Delhi summer, is in town to promote the film ahead of its release on 28 November. Catch an exclusive trailer screening, ask the stars your questions, and stay for the meet and greet.",
+             highlights: ["🎬 Exclusive trailer", "🎤 Live Q&A", "📸 Meet & greet", "🎟️ Win premiere passes"]),
         Pick(title: "Enjoy Coffee at Savourworks", hub: "Ambience Mall",
-             line: "Up to 50% off 40+ brands - plus an ice rink and IMAX for a full day out, not just shopping.", image: "hub_fly_sale"),
+             line: "Up to 50% off 40+ brands - plus an ice rink and IMAX for a full day out, not just shopping.", image: "hub_fly_sale",
+             kind: .offer, when: "Till Sun, 30 Nov", time: "11:00 AM – 10:00 PM", spot: "Across the mall", entry: "Free entry",
+             about: "The season sale is on: up to 50% off at more than 40 brands, from fashion to home. Refuel at Savourworks between stores, then make a day of it at the ice rink or a film on the IMAX screen.",
+             highlights: ["🛍️ Up to 50% off", "☕ Savourworks coffee", "⛸️ Ice rink", "🎬 IMAX"]),
+        Pick(title: "Battle of the Bands, live", hub: "Cyber Hub",
+             line: "Six of Delhi's best indie bands, one open-air stage, and a crowd vote that picks the winner.",
+             image: "vibe_concert", kind: .liveEvent,
+             featuring: [Pick.Person(name: "Neon Monsoon", role: "Headliner"), Pick.Person(name: "Paper Kites Club", role: "Indie rock"),
+                         Pick.Person(name: "DJ Saanjh", role: "Closing set")],
+             when: "Fri, 28 Nov", time: "7:30 PM onwards", spot: "Open-air amphitheatre", entry: "₹499 onwards",
+             about: "Six bands, 20 minutes each, and you decide who wins. Grab a drink from the bars around the amphitheatre, vote from your phone, and stay for the headliner's full set and a late DJ closer.",
+             highlights: ["🎸 6 live bands", "🗳️ Crowd vote", "🍻 Bars all around", "🎧 Late DJ set"]),
         Pick(title: "Skate at iSKATE", hub: "DLF Promenade",
-             line: "India's largest rink, with cafés and plenty of shopping right around it.", image: "hub_fly_iskate"),
+             line: "India's largest rink, with cafés and plenty of shopping right around it.", image: "hub_fly_iskate",
+             kind: .activity, when: "Every day", time: "11:00 AM – 10:00 PM", spot: "iSKATE, Floor 2", entry: "₹650 per session",
+             about: "Glide across India's largest indoor ice rink. Skates and gloves are included, coaches are on the ice for first-timers, and the cafés around the rink make it easy to turn a session into an afternoon.",
+             highlights: ["⛸️ Skates included", "👶 Kids welcome", "🧑‍🏫 Coaches on ice", "☕ Rink-side cafés"]),
         Pick(title: "Enjoy Flea markets", hub: "Ambience Mall",
-             line: "50+ indie stalls, street food, and a live band under fairy lights.", image: "hub_fly_flea"),
+             line: "50+ indie stalls, street food, and a live band under fairy lights.", image: "hub_fly_flea",
+             kind: .market, when: "Sat & Sun, 22–23 Nov", time: "4:00 PM – 11:00 PM", spot: "Front lawns", entry: "Free entry",
+             about: "More than 50 independent labels, makers and home chefs set up under fairy lights for the weekend. Browse handmade jewellery, vintage finds and small-batch skincare, then eat your way through the street food while a live band plays.",
+             highlights: ["🛍️ 50+ indie stalls", "🍢 Street food", "🎶 Live band", "🐾 Pet friendly"]),
     ]
 
     /// Listing mid-page rail: "Perfect for Kid's day out".
@@ -348,8 +445,8 @@ enum HubsData {
         KidSpot(name: "Smaash", line: "2.8 km • Ambience Mall", image: "hub_rail_smaash"),
     ]
 
-    /// Only "Family outing", "Kids play zone" and "Chill hangout" can be read in the Figma; the rest are placeholders.
-    static let vibes = ["Family outing", "Kids play zone", "Weekend plans", "Date night", "Foodies", "Chill hangout", "Luxury"]
+    /// The listing's filter chips. "Under 5kms" reads the distance; the rest match a hub's vibes.
+    static let vibes = ["Under 5kms", "Food court", "Valet parking", "Family outing", "Kids play zone", "Date night", "Chill hangout", "Luxury"]
 
     static let defaultBuzz: [HubBuzz] = [
         HubBuzz(title: "Dining Carnival", subtitle: "40+ restaurants", image: "hub_buzz_dining"),
@@ -357,119 +454,124 @@ enum HubsData {
         HubBuzz(title: "1+1 on Starbucks", subtitle: "Till 22 Sept", image: "hub_buzz_starbucks"),
     ]
 
+    /// Real places, with tags drawn from what each is known for. Ratings and distances are approximate, not live.
     static let hubs: [Hub] = [
-        Hub("Good City Centre", type: .mall, locality: "Sector 50, Gurugram", distance: "3 km",
-            blurb: "A vibrant destination featuring a mix of popular stores, cozy eateries, and is family-friendly",
-            chips: ["🛒 Daily essentials", "🍽️ Family restaurants", "🎬 Movie theater", "👶 Play area", "🏪 Retail stores"],
-            image: "hub_good_city", vibes: ["Family outing", "Kids play zone"],
-            stats: [.restaurants(18), .movies(1), .stores(42)], glow: Color(hex: 0x7A8CA0)),
-        Hub("Omaxe Celebration Mall", type: .mall, locality: "Sohna Road, Gurugram", distance: "5 km",
-            blurb: "A lively spot with popular shops, inviting eateries, and a welcoming atmosphere for families.",
-            chips: ["🛍️ Shopping brands", "🎬 Cinema hall", "🍔 Fast food joints", "🎮 Entertainment zone"],
-            image: "hub_omaxe", vibes: ["Family outing", "Weekend plans"],
-            stats: [.restaurants(14), .movies(1), .stores(36)], glow: Color(hex: 0x6F8FA8)),
-        Hub("Cyber Hub", type: .highStreet, locality: "Cyber City, Gurugram", distance: "8 km",
-            blurb: "Vibrant dining and entertainment hub with live music and trendy restaurants.",
-            chips: ["🎤 Live music events", "🛍️ Shopping brands", "🍽️ Global cuisines", "🛍️ Boutique stores"],
-            image: "hub_cyber", vibes: ["Date night", "Foodies", "Chill hangout"],
-            stats: [.restaurants(52), .stores(12)], glow: Color(hex: 0x8A7C6E)),
-        Hub("Galleria Market", type: .market, locality: "Sector-28, Gurugram", distance: "10 km",
-            blurb: "Galleria Market in Gurgaon buzzes with trendy shops, cozy cafes, and delicious street food stalls.",
-            chips: ["🍜 Street food hub", "🛍️ Trendy shops", "☕ Cafés & bakeries", "💇 Salons & spas"],
-            image: "hub_galleria", googleRating: "4.4", vibes: ["Foodies", "Chill hangout"],
-            stats: [.restaurants(30), .stores(64)], glow: Color(hex: 0x7F7468)),
-        Hub("MGF Metropolitan Mall", type: .mall, locality: "MG Road, Gurugram", distance: "12 km",
-            blurb: "A premier shopping spot, featuring leading brands, cozy cafés, and fun activities for kids.",
-            chips: ["🛍️ Fashion stores", "🎬 Multiplex cinema", "☕ Cozy cafés", "🎮 Gaming arcade", "🍕 Food court"],
-            image: "hub_mgf", googleRating: "4.4", vibes: ["Family outing", "Kids play zone"],
-            stats: [.restaurants(22), .movies(1), .stores(70)], glow: Color(hex: 0x6E8494)),
-        Hub("Ambience Mall", type: .mall, locality: "NH-8, Gurugram", distance: "13 km",
-            blurb: "Gurgaon's biggest shopping destination with top brands, great cafés and plenty for kids.",
-            chips: ["🛍️ Premium brands", "👶 Kids' play zone", "⛸️ Ice skating rink", "🎬 PVR cinemas"],
-            image: "hub_ambience", imageAlignment: .top, vibes: ["Family outing", "Kids play zone", "Weekend plans"],
-            stats: [.restaurants(47), .movies(2), .stores(120)], glow: Color(hex: 0x8C7A70)),
-        Hub("32nd Avenue", type: .highStreet, locality: "Sector 15, Gurugram", distance: "15 km",
-            blurb: "Top shopping with popular brands, cozy cafés, and kids' fun.",
-            chips: ["☕ Artisan cafés", "🌿 Open-air seating", "🎭 Art galleries", "🍷 Fine dining"],
-            image: "hub_32nd", vibes: ["Date night", "Chill hangout"],
-            stats: [.restaurants(28), .stores(16)], glow: Color(hex: 0x8D6D4B)),
-        Hub("Khan Market", type: .market, locality: "Central Delhi", distance: "35 km",
-            blurb: "Explore Khan Market, known for its trendy shops, charming cafés, and a welcoming vibe for families.",
-            chips: ["📚 Bookstores", "👗 Designer boutiques", "☕ Iconic cafés", "🍝 International cuisine"],
-            image: "hub_khan", imageAlignment: .bottom, vibes: ["Foodies", "Chill hangout", "Date night"],
-            heroImage: "hub_khan_hero", detailDistance: "28.3km", detailArea: "Rabindra Nagar, New Delhi",
-            status: .closed(opens: "Opens 11am"), stats: [.restaurants(7), .stores(59)], glow: Color(hex: 0xA68B10),
-            address: "2nd Floor, Xo Bar, Aipl Joy Central A unit of Studio, Sector 65, Gurugram, Haryana 122002, India",
+        Hub("Good Earth City Center", type: .mall, locality: "Sector 50, Gurugram", distance: "3 km", googleRating: "4.2",
+            blurb: "A neighbourhood mall for everyday shopping, family dinners and a movie",
+            chips: ["🍽️ Family dinners under one roof", "🎬 Multiplex", "🛒 Daily essentials", "☕ Cafés", "👶 Kids' play area", "🍕 Pizza", "🅿️ Free parking", "🥗 Healthy bowls"],
+            image: "hub_good_city", vibes: ["Family outing", "Kids play zone", "Food court"],
+            address: "Malibu Towne, Sector 50, Gurugram, Haryana 122018", stats: [.restaurants(18), .movies(1), .stores(42)], glow: Color(hex: 0x7A8CA0),
+            hasFindInHub: false),
+        Hub("Omaxe Celebration Mall", type: .mall, locality: "Sohna Road, Gurugram", distance: "5 km", googleRating: "4.0",
+            blurb: "An easy-going family mall on Sohna Road with value brands and a busy food court",
+            chips: ["🍔 Busy weekend food court", "🎬 Cinema", "🎮 Gaming", "👕 Value fashion", "🛍️ Lifestyle", "☕ Coffee", "🅿️ Basement parking", "🍕 Pizza", "👪 Easy family day out"],
+            image: "hub_omaxe", vibes: ["Family outing", "Food court"],
+            address: "Sohna Road, Sector 48, Gurugram, Haryana 122018", stats: [.restaurants(14), .movies(1), .stores(36)], glow: Color(hex: 0x6F8FA8),
+            hasFindInHub: false),
+        Hub("Cyber Hub", type: .highStreet, locality: "DLF Cyber City, Gurugram", distance: "13.5 km", googleRating: "4.5",
+            blurb: "Gurugram's after-work address: rooftop bars, live gigs and big-name dining",
+            chips: ["🎤 Live gigs after work", "🍻 SOCIAL", "🥟 P.F. Chang's", "🍛 Farzi Café", "👕 Uniqlo", "🍺 Local", "🌳 Open-air walkway", "🚇 Rapid Metro", "🍸 Soi 7", "🍔 Burgers", "🥂 Happy hours", "💼 Cyber City", "🚗 Valet"],
+            image: "hub_cyber", vibes: ["Date night", "Chill hangout", "Valet parking"],
+            address: "DLF Cyber City, Phase 2, Gurugram, Haryana 122002", stats: [.restaurants(52), .stores(12)], glow: Color(hex: 0x8A7C6E)),
+        Hub("Galleria Market", type: .market, locality: "DLF Phase 4, Gurugram", distance: "10 km", googleRating: "4.4",
+            blurb: "An open-air market ringed with cafés, bakeries, boutiques and salons",
+            chips: ["☕ Café hopping around the plaza", "🥐 Bakeries", "🍷 Wine", "🍜 Street food", "💇 Salons", "🛍️ Boutiques", "🌙 Late-night bites", "🚶 Pedestrian plaza", "🍰 Desserts", "🍣 Sushi", "🐾 Pet friendly"],
+            image: "hub_galleria", vibes: ["Chill hangout", "Date night"],
+            address: "DLF Phase 4, Sector 28, Gurugram, Haryana 122009", stats: [.restaurants(30), .stores(64)], glow: Color(hex: 0x7F7468)),
+        Hub("MGF Metropolitan Mall", type: .mall, locality: "MG Road, Gurugram", distance: "12 km", googleRating: "4.1",
+            blurb: "One of MG Road's original malls, with a multiplex, cafés and a kids' arcade",
+            chips: ["🚇 Right by MG Road Metro", "🎬 Multiplex", "🎮 Arcade", "🍕 Food court", "☕ Cafés", "🛍️ Fashion", "👶 Kids' activities", "📚 Books"],
+            image: "hub_mgf", vibes: ["Family outing", "Kids play zone", "Food court"],
+            address: "Mehrauli-Gurgaon Road, Sector 25, Gurugram, Haryana 122002", stats: [.restaurants(22), .movies(1), .stores(70)], glow: Color(hex: 0x6E8494)),
+        Hub("Ambience Mall", type: .mall, locality: "DLF Phase 3, Gurgaon", distance: "15.8 km", googleRating: "4.6",
+            blurb: "Luxury mall with an ice rink, an arcade & runway-worthy fashion",
+            chips: ["⛸️ Ice rink inside the mall", "🕹️ Timezone arcade", "👗 Zara", "👕 H&M", "🎬 Multiplex cinema", "🚗 Valet parking", "🍱 Food court", "🛍️ Marks & Spencer", "☕ Starbucks", "🎁 Gifts", "💄 Sephora", "👟 Nike", "🍽️ Fine dining"],
+            image: "hub_ambience", imageAlignment: .top, vibes: ["Family outing", "Kids play zone", "Valet parking", "Food court", "Luxury"],
+            address: "NH-8, Ambience Island, DLF Phase 3, Gurugram, Haryana 122002", stats: [.restaurants(47), .movies(2), .stores(120)], glow: Color(hex: 0x8C7A70)),
+        Hub("32nd Avenue", type: .highStreet, locality: "Sector 15, Gurugram", distance: "15 km", googleRating: "4.3",
+            blurb: "A low-rise open-air stretch of restaurants, art and evening hangouts",
+            chips: ["🌿 Open-air dining under the sky", "🎭 Art", "🍷 Fine dining", "☕ Artisan cafés", "🎶 Live music", "🍸 Cocktails", "🛍️ Designer stores", "🚗 Valet", "🍕 Wood-fired pizza"],
+            image: "hub_32nd", vibes: ["Date night", "Chill hangout", "Valet parking"],
+            address: "Sector 15 Part 2, Gurugram, Haryana 122001", stats: [.restaurants(28), .stores(16)], glow: Color(hex: 0x8D6D4B)),
+        Hub("Khan Market", type: .market, locality: "Rabindra Nagar, New Delhi", distance: "35 km", googleRating: "4.5",
+            blurb: "Delhi's most loved market for old bookshops, boutiques and rooftop cafés",
+            chips: ["📚 Old bookshops like Faqir Chand", "☕ The Big Chill Café", "🐢 Cafe Turtle", "🧵 Anokhi", "👗 Nicobar", "🏡 Good Earth", "🍷 Perch", "📖 Bahrisons", "🍝 Italian", "🍰 Bakeries", "📰 Newsstands", "🧶 Handloom"],
+            image: "hub_khan", imageAlignment: .bottom, vibes: ["Chill hangout", "Date night"],
+            heroImage: "hub_khan_hero", status: .closed(opens: "Opens 11am"), address: "Khan Market, Rabindra Nagar, New Delhi, Delhi 110003",
+            stats: [.restaurants(42), .stores(150)], glow: Color(hex: 0xA68B10),
             buzz: [HubBuzz(title: "Dining Carnival", subtitle: "40+ restaurants", image: "hub_buzz_dining"),
                    HubBuzz(title: "Faqir Chand bookstore", image: "hub_buzz_faqir"),
                    HubBuzz(title: "1+1 on Starbucks", subtitle: "Till 22 Sept", image: "hub_buzz_starbucks")]),
-        Hub("The Chanakya", type: .mall, locality: "Chanakyapuri, Delhi", distance: "3.5 km",
-            blurb: "An ultra-luxury destination with designer boutiques, gourmet dining, and a premium cinema experience.",
-            chips: ["👗 Designer labels", "🍷 Fine dining", "🎬 Luxury cinema", "💎 Premium lifestyle"],
-            image: "hub_chanakya", vibes: ["Luxury", "Date night"],
-            stats: [.restaurants(12), .movies(1), .stores(40)], glow: Color(hex: 0x6D7F93)),
-        Hub("DLF Emporio", type: .mall, locality: "Vasant Kunj, Delhi", distance: "3.5 km",
-            blurb: "Delhi's most exclusive luxury mall featuring international fashion houses and high-end dining.",
-            chips: ["🛍️ Luxury brands", "👠 High fashion", "🍽️ Gourmet restaurants", "💍 Jewellery stores"],
-            image: "hub_emporio", vibes: ["Luxury"],
-            stats: [.restaurants(10), .stores(80)], glow: Color(hex: 0x5F7F9E)),
-        Hub("Select Citywalk", type: .mall, locality: "Saket, Delhi", distance: "3.5 km",
-            blurb: "A vibrant open-air shopping destination with top brands, great food, and lively entertainment.",
-            chips: ["🛍️ Top brands", "🎤 Live events", "🍔 Food plaza", "🎬 PVR cinemas"],
-            image: "hub_select", vibes: ["Weekend plans", "Family outing", "Chill hangout"],
-            stats: [.restaurants(38), .movies(1), .stores(140)], glow: Color(hex: 0x8C7468)),
-        Hub("Pacific Mall", type: .mall, locality: "Tagore Garden, Delhi", distance: "3.5 km",
-            blurb: "A popular family-friendly mall with diverse shopping, entertainment, and a buzzing food court.",
-            chips: ["🛒 Value shopping", "🎮 Gaming zone", "🍕 Food court", "👶 Kids' activities"],
-            image: "hub_pacific", vibes: ["Family outing", "Kids play zone"],
-            stats: [.restaurants(20), .movies(1), .stores(90)], glow: Color(hex: 0x6F89A3)),
-        Hub("DLF Promenade", type: .mall, locality: "DLF Phase 4, Saket", distance: "28 km",
-            blurb: "Gurgaon's biggest shopping destination with top brands, great cafés and plenty for kids.",
-            chips: ["🛍️ Premium brands", "⛸️ iSKATE rink", "🍽️ Dining Carnival", "🎬 2 Movies"],
-            image: "hub_promenade", vibes: ["Family outing", "Weekend plans", "Foodies"],
-            detailDistance: "28.3km", stats: [.restaurants(47), .movies(2), .stores(59)]),
-        Hub("The Leela Ambience", type: .hotel, locality: "NH-8, Gurugram", distance: "13 km",
-            blurb: "A grand city hotel with celebrated restaurants, a rooftop bar and an award-winning spa.",
-            chips: ["🍽️ Fine dining", "🍸 Rooftop bar", "💆 Luxury spa", "🏊 Infinity pool"],
-            image: "hub_hotel_leela", vibes: ["Luxury", "Date night"],
-            status: .open(until: "Open 24 hours"), stats: [.restaurants(6)], glow: Color(hex: 0x8E6F96)),
-        Hub("Taj Palace", type: .hotel, locality: "Chanakyapuri, Delhi", distance: "4 km",
-            blurb: "Classic Delhi luxury with legendary dining rooms, poolside evenings and an in-house spa.",
-            chips: ["🍽️ Heritage dining", "🍸 Cocktail lounge", "💆 Spa", "🛍️ Boutique arcade"],
-            image: "hub_hotel_taj", vibes: ["Luxury", "Date night"],
-            status: .open(until: "Open 24 hours"), stats: [.restaurants(5)], glow: Color(hex: 0x4A70A8)),
-        Hub("Baga Beach", type: .beach, locality: "North Goa", distance: "1,880 km",
-            blurb: "Goa's liveliest stretch of sand, lined with beach shacks, water sports and sunset parties.",
-            chips: ["🏖️ Beach shacks", "🌊 Water sports", "🍹 Sunset bars", "🎶 Live music"],
-            image: "hub_beach_baga", vibes: ["Weekend plans", "Chill hangout"],
-            status: .open(until: "Shacks close 11 PM"), stats: [.restaurants(24)], glow: Color(hex: 0x4B98B0)),
-        Hub("Juhu Beach", type: .beach, locality: "Juhu, Mumbai", distance: "1,410 km",
-            blurb: "Mumbai's favourite seaside evening, with street food stalls and sea-facing cafés.",
-            chips: ["🌅 Sunset walks", "🍜 Street food", "☕ Sea-facing cafés", "👶 Family friendly"],
-            image: "hub_beach_juhu", vibes: ["Family outing", "Foodies"],
-            status: .open(until: "Stalls close 11 PM"), stats: [.restaurants(16)], glow: Color(hex: 0xB08D6E)),
-        Hub("Chhatrapati Shivaji Maharaj Airport (T2)", type: .airport, locality: "Mumbai", distance: "1,410 km",
-            blurb: "Gurgaon's biggest shopping destination with top brands, great cafés and plenty for kids.",
-            chips: ["🍽️ Restaurants near gate", "☕ Cafés", "🍸 Bars", "🛍️ Duty free"],
-            image: "hub_airport", detailDistance: "28.3km", status: nil,
-            stats: [.restaurants(104), .stores(3)], glow: Color(hex: 0xB4AAA8), brandLogo: "hub_logo_adani"),
-        Hub("AIPL Business Club", type: .business, locality: "Sector-58, Gurgaon", distance: "28 km",
-            blurb: "Premium Grade A office spaces with cafés, dining and business amenities in Gurugram.",
-            chips: ["🏢 Grade A offices", "☕ Cafés", "🍽️ Restaurants", "🅿️ Parking"],
-            image: "hub_aipl", detailDistance: "28.3km", rating: nil,
+        Hub("The Chanakya", type: .mall, locality: "Chanakyapuri, New Delhi", distance: "32 km", googleRating: "4.5",
+            blurb: "An intimate luxury mall of designer labels, gourmet dining and a boutique cinema",
+            chips: ["👜 Designer labels under one roof", "💎 Jewellery", "🎬 Luxury cinema", "🍷 Fine dining", "🥂 Champagne", "🚗 Valet", "🧴 Beauty", "☕ Espresso bars"],
+            image: "hub_chanakya", vibes: ["Luxury", "Date night", "Valet parking"],
+            address: "Yashwant Place, Chanakyapuri, New Delhi, Delhi 110021", stats: [.restaurants(12), .movies(1), .stores(40)], glow: Color(hex: 0x6D7F93),
+            hasFindInHub: false),
+        Hub("DLF Emporio", type: .mall, locality: "Vasant Kunj, New Delhi", distance: "20 km", googleRating: "4.5",
+            blurb: "Delhi's address for international fashion houses and couture",
+            chips: ["👗 Couture and international fashion houses", "👜 Louis Vuitton", "🕶️ Gucci", "💄 Dior", "🧥 Burberry", "💍 Fine jewellery", "⌚ Watches", "🚗 Valet", "🍽️ Gourmet dining", "☕ Lounge"],
+            image: "hub_emporio", vibes: ["Luxury", "Valet parking"],
+            status: .open(until: "Closes 9 PM"),
+            address: "4 Nelson Mandela Marg, Vasant Kunj, New Delhi, Delhi 110070", stats: [.restaurants(10), .stores(80)], glow: Color(hex: 0x5F7F9E),
+            buzz: [HubBuzz(title: "Couture Week", subtitle: "12 designers · till Sun", image: "occ_lehenga_red"),
+                   HubBuzz(title: "Dining Carnival", subtitle: "20% off, 10 places", image: "hub_buzz_dining"),
+                   HubBuzz(title: "1+1 on Starbucks", subtitle: "Till 22 Sept", image: "hub_buzz_starbucks")]),
+        Hub("Select Citywalk", type: .mall, locality: "Saket, New Delhi", distance: "24 km", googleRating: "4.6",
+            blurb: "South Delhi's favourite mall, with an open-air plaza, top brands and a big food court",
+            chips: ["🌳 Open-air plaza with live events", "🎬 PVR", "👕 H&M", "👗 Zara", "🍔 Food plaza", "🛍️ Mango", "🚗 Valet", "☕ Cafés", "👟 Sneakers", "🎁 Pop-ups", "💄 Beauty", "🎄 Festive displays", "🧸 Toys", "🎤 Gigs"],
+            image: "hub_select", vibes: ["Family outing", "Chill hangout", "Food court", "Valet parking"],
+            address: "A-3, District Centre, Saket, New Delhi, Delhi 110017", stats: [.restaurants(38), .movies(1), .stores(140)], glow: Color(hex: 0x8C7468)),
+        Hub("Pacific Mall", type: .mall, locality: "Tagore Garden, New Delhi", distance: "30 km", googleRating: "4.2",
+            blurb: "West Delhi's big family mall, with value shopping and a buzzing food court",
+            chips: ["🛒 Value shopping for the family", "🎮 Gaming", "🍕 Food court", "👶 Kids", "🎬 Multiplex", "👕 Max Fashion", "🚇 Tagore Garden Metro", "🍔 Quick bites"],
+            image: "hub_pacific", vibes: ["Family outing", "Kids play zone", "Food court"],
+            address: "Najafgarh Road, Tagore Garden, New Delhi, Delhi 110018", stats: [.restaurants(20), .movies(1), .stores(90)], glow: Color(hex: 0x6F89A3)),
+        Hub("DLF Promenade", type: .mall, locality: "Vasant Kunj, New Delhi", distance: "20.3 km", googleRating: "4.5",
+            blurb: "South Delhi's lively mall, with great cafés, top brands and plenty for a full day out",
+            chips: ["🍽️ Dining Carnival all season", "🎬 PVR ICON", "👗 Zara", "👕 H&M", "☕ Starbucks", "🎮 Arcade", "🌳 Fountain courtyard", "🚗 Valet", "🍦 Desserts", "🎁 Weekend pop-ups", "💄 Beauty"],
+            image: "hub_promenade", vibes: ["Family outing", "Food court", "Valet parking"],
+            address: "3 Nelson Mandela Marg, Vasant Kunj, New Delhi, Delhi 110070", stats: [.restaurants(47), .movies(2), .stores(59)]),
+        Hub("The Leela Ambience", type: .hotel, locality: "Ambience Island, Gurugram", distance: "15 km", googleRating: "4.6",
+            blurb: "A grand city hotel with celebrated restaurants, a rooftop bar and a luxury spa",
+            chips: ["🥂 Long Sunday brunches", "🍽️ Fine dining", "🍸 Rooftop bar", "💆 Spa", "🏊 Infinity pool", "🍰 Patisserie", "🚗 Valet", "🏋️ Fitness"],
+            image: "hub_hotel_leela", vibes: ["Luxury", "Date night", "Valet parking"],
+            status: .open(until: "Open 24 hours"), address: "Ambience Island, NH-8, Gurugram, Haryana 122002", stats: [.restaurants(6)], glow: Color(hex: 0x8E6F96)),
+        Hub("Taj Palace", type: .hotel, locality: "Chanakyapuri, New Delhi", distance: "32 km", googleRating: "4.7",
+            blurb: "Classic Delhi luxury with legendary dining rooms and poolside evenings",
+            chips: ["🍽️ Legendary Orient Express dining", "🥢 House of Ming", "🍛 Loya", "🍸 Blue Bar", "💆 Jiva Spa", "🏊 Poolside", "🛍️ Boutiques", "🚗 Valet", "🌳 Palace gardens"],
+            image: "hub_hotel_taj", vibes: ["Luxury", "Date night", "Valet parking"],
+            status: .open(until: "Open 24 hours"), address: "2 Sardar Patel Marg, Diplomatic Enclave, New Delhi, Delhi 110021", stats: [.restaurants(5)], glow: Color(hex: 0x4A70A8)),
+        Hub("Baga Beach", type: .beach, locality: "North Goa", distance: "1,880 km", googleRating: "4.4",
+            blurb: "Goa's liveliest stretch of sand, lined with shacks, water sports and sunset parties",
+            chips: ["🎶 Sunset parties on Tito's Lane", "🏖️ Shacks", "🌊 Parasailing", "🛥️ Jet skis", "🍹 Britto's", "🐬 Dolphin trips", "🌅 Sunsets", "🛍️ Saturday night market", "🐟 Seafood", "🍺 Beach bars", "🚤 Banana boats", "🛵 Scooters"],
+            image: "hub_beach_baga", vibes: ["Chill hangout"],
+            status: .open(until: "Shacks close 11 PM"), address: "Baga Beach, Calangute, Goa 403516", stats: [.restaurants(24)], glow: Color(hex: 0x4B98B0)),
+        Hub("Juhu Beach", type: .beach, locality: "Juhu, Mumbai", distance: "1,410 km", googleRating: "4.3",
+            blurb: "Mumbai's favourite seaside evening, with street food stalls and sea-facing cafés",
+            chips: ["🍛 Pav bhaji right on the sand", "🌅 Sunsets", "🍧 Gola", "☕ Sea-facing cafés", "🎠 Kids' rides", "🎬 Bollywood bungalows", "🏃 Morning runs", "🌊 Sea views", "🥥 Coconut water"],
+            image: "hub_beach_juhu", vibes: ["Family outing", "Kids play zone"],
+            status: .open(until: "Stalls close 11 PM"), address: "Juhu Tara Road, Juhu, Mumbai, Maharashtra 400049", stats: [.restaurants(16)], glow: Color(hex: 0xB08D6E)),
+        Hub("Chhatrapati Shivaji Maharaj Airport (T2)", type: .airport, locality: "Andheri East, Mumbai", distance: "1,410 km", googleRating: "4.5",
+            blurb: "India's art-filled terminal, with duty free, lounges and dining on both sides of security",
+            chips: ["🎨 Jaya He art museum walk", "🛍️ Duty free", "🛋️ Lounges", "🍽️ Restaurants near gate", "☕ Starbucks", "🍸 Bars", "🛏️ Sleep pods", "🛂 Domestic & international", "📦 Baggage", "💱 Forex", "🍔 Quick bites", "🚿 Showers", "🖼️ Art walls"],
+            image: "hub_airport", status: nil, address: "Terminal 2, Andheri East, Mumbai, Maharashtra 400099",
+            stats: [.restaurants(104), .stores(68)], glow: Color(hex: 0xB4AAA8), brandLogo: "hub_logo_adani"),
+        Hub("AIPL Business Club", type: .business, locality: "Sector 62, Gurugram", distance: "6 km", googleRating: "4.3",
+            blurb: "Grade A offices on Golf Course Extension Road, with cafés and everyday dining downstairs",
+            chips: ["🥗 Quick lunches between meetings", "🏢 Offices", "☕ Cafés", "🍽️ Restaurants", "🏋️ Fitness", "💼 Coworking", "🅿️ Parking", "🛣️ Golf Course Ext Rd"],
+            image: "hub_aipl", address: "Golf Course Extension Road, Sector 62, Gurugram, Haryana 122102",
             stats: [.restaurants(7), .stores(59)], glow: Color(hex: 0x7F89BE)),
-        Hub("Sunder Nursery", type: .park, locality: "Rabindra Nagar, New Delhi", distance: "28 km",
-            blurb: "Perfect for picnics, peaceful walks, heritage views and a couple of lovely cafés.",
-            chips: ["🌳 Heritage garden", "🧺 Picnic spots", "☕ Garden cafés", "🌸 Seasonal blooms"],
+        Hub("Sunder Nursery", type: .park, locality: "Nizamuddin, New Delhi", distance: "28.3 km", googleRating: "4.6",
+            blurb: "A heritage park for picnics, peaceful walks, Mughal tombs and a couple of lovely cafés",
+            chips: ["🕌 Mughal tombs among the gardens", "🏛️ Lakkarwala Burj", "🌳 Heritage", "🧺 Picnics", "🌸 Blooms", "🦋 Biodiversity zone", "☕ Cafés", "🎭 Amphitheatre", "🐦 Birdwatching", "🌿 Bonsai", "📷 Photo walks"],
             image: "hub_sunder", vibes: ["Family outing", "Chill hangout", "Date night"],
-            detailDistance: "28.3km", status: nil, stats: [.restaurants(7)], glow: Color(hex: 0x8D6D4B)),
+            status: .open(until: "Closes 7 PM"), address: "Bharat Scout and Guide Marg, Nizamuddin, New Delhi, Delhi 110013", stats: [.restaurants(7)], glow: Color(hex: 0x8D6D4B)),
     ]
 
-    static func hub(named name: String) -> Hub? { hubs.first { $0.name == name } }
+    static let regions = ["Delhi NCR", "Mumbai", "Goa"]
 
-    /// The landing's rail. Omaxe sits out: its photo's black lower band only works under the listing card's fade.
-    static let nearby: [Hub] = ["Good City Centre", "Cyber Hub", "Galleria Market", "MGF Metropolitan Mall", "Ambience Mall", "Select Citywalk"]
-        .compactMap(hub(named:))
+    static func hub(named name: String) -> Hub? { hubs.first { $0.name == name } }
 
     // MARK: Places
 
@@ -515,6 +617,10 @@ enum HubsData {
         HubPlace(name: "Tony & Guy", kinds: [.salon], photo: "hub_place_toni", logo: "hub_logo_toni", floor: 2,
                  offer: nil, shopNumber: "2nd Floor | Shop 250/251", tags: ["Salons", "Spas"]),
     ]
+
+    /// What the hub's search sheet shows before anything is typed.
+    static let trending: [HubPlace] = ["iSKATE - India's largest rink", "Bigg chill cafe", "Zara", "The Potbelly Divine", "The Drunken Botanist"]
+        .compactMap { name in places.first { $0.name == name } }
 
     static func places(_ kind: HubPlace.Kind) -> [HubPlace] { places.filter { $0.kinds.contains(kind) } }
 
